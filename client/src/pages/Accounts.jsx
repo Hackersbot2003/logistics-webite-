@@ -123,23 +123,29 @@ function FMLFinancials({vehicle, fin, setF, pumps, userName, avgMileage, returnF
 
   return(<>
     {/* Financial Overview */}
-    <AccSection title="Financial Overview" blue>
-      <Row2>
-        <FI label="Overall KM (from vehicle)"><div style={INP_RO}>{vehicle.overallKm||"0"}</div></FI>
-        <FI label="Avg Mileage km/l (fixed data)"><div style={INP_RO}>{avgMileage?avgMileage.toFixed(2):"—"}</div></FI>
-        <FI label="Diesel Quantity (auto: km÷avg)"><div style={INP_CALC}>{dieselQty} L</div></FI>
-        <FI label="Diesel Rate (enter ₹/L)">
-          {canEdit("dieselRate")
-            ? <input value={fin.dieselRate} onChange={e=>setF("dieselRate",e.target.value)} style={INP} type="number" placeholder="Enter rate" />
-            : <div style={INP_RO}>₹{fin.dieselRate||"—"}</div>
-          }
-        </FI>
-        <FI label="Diesel Amount (auto)"><div style={INP_CALC}>₹{dieselAmt}</div></FI>
-        <FI label="Driver Wages (auto: km×rate)"><div style={INP_CALC}>₹{driverWages}<div style={{fontSize:10,marginTop:2}}>₹{driverWagesRef}/km × {km}km</div></div></FI>
-        <FI label="Return Fare (fixed data)"><div style={INP_RO}>{returnFareRef||"—"}</div></FI>
-        <FI label="Total (auto)"><div style={INP_SUM}>₹{total}</div></FI>
-      </Row2>
-    </AccSection>
+    {/* Financial Overview — hidden for user role, they only see overallKm */}
+    {!isUserOnly ? (
+      <AccSection title="Financial Overview" blue>
+        <Row2>
+          <FI label="Overall KM (from vehicle)"><div style={INP_RO}>{vehicle.overallKm||"0"}</div></FI>
+          <FI label="Avg Mileage km/l (fixed data)"><div style={INP_RO}>{avgMileage?avgMileage.toFixed(2):"—"}</div></FI>
+          <FI label="Diesel Quantity (auto: km÷avg)"><div style={INP_CALC}>{dieselQty} L</div></FI>
+          <FI label="Diesel Rate (enter ₹/L)">
+            <input value={fin.dieselRate} onChange={e=>setF("dieselRate",e.target.value)} style={INP} type="number" placeholder="Enter rate" />
+          </FI>
+          <FI label="Diesel Amount (auto)"><div style={INP_CALC}>₹{dieselAmt}</div></FI>
+          <FI label="Driver Wages (auto: km×rate)"><div style={INP_CALC}>₹{driverWages}<div style={{fontSize:10,marginTop:2}}>₹{driverWagesRef}/km × {km}km</div></div></FI>
+          <FI label="Return Fare (fixed data)"><div style={INP_RO}>{returnFareRef||"—"}</div></FI>
+          <FI label="Total (auto)"><div style={INP_SUM}>₹{total}</div></FI>
+        </Row2>
+      </AccSection>
+    ) : (
+      <AccSection title="Vehicle Info" blue>
+        <Row2>
+          <FI label="Overall KM"><div style={INP_RO}>{vehicle.overallKm||"0"}</div></FI>
+        </Row2>
+      </AccSection>
+    )}
 
     {/* Expenses & Payments */}
     <AccSection title="Expenses & Payments">
@@ -160,20 +166,16 @@ function FMLFinancials({vehicle, fin, setF, pumps, userName, avgMileage, returnF
         <button onClick={addTax} style={{fontSize:13,color:C.blue,background:"none",border:"none",cursor:"pointer",fontWeight:600}}>+ Add Receipt</button>
       </div>
       <Row2>
-        <FI label="Border">
-          {canEdit("border")
-            ? <input value={fin.border} onChange={e=>setF("border",e.target.value)} style={INP} type="number" placeholder="₹" />
-            : <div style={INP_RO}>{fin.border||"—"}</div>
-          }
-        </FI>
-        <FI label="Total Border (auto: border+tax)"><div style={INP_CALC}>₹{totalBorder}</div></FI>
-        <FI label="4 Ltr Diesel">
-          {canEdit("fourLtrDiesel")
-            ? <input value={fin.fourLtrDiesel} onChange={e=>setF("fourLtrDiesel",e.target.value)} style={INP} type="number" placeholder="₹" />
-            : <div style={INP_RO}>{fin.fourLtrDiesel||"—"}</div>
-          }
-        </FI>
-        <FI label="Grand Total (auto)"><div style={INP_SUM}>₹{grandTotal}</div></FI>
+        {!isUserOnly && <>
+          <FI label="Border">
+            <input value={fin.border} onChange={e=>setF("border",e.target.value)} style={INP} type="number" placeholder="₹" />
+          </FI>
+          <FI label="Total Border (auto: border+tax)"><div style={INP_CALC}>₹{totalBorder}</div></FI>
+          <FI label="4 Ltr Diesel">
+            <input value={fin.fourLtrDiesel} onChange={e=>setF("fourLtrDiesel",e.target.value)} style={INP} type="number" placeholder="₹" />
+          </FI>
+          <FI label="Grand Total (auto)"><div style={INP_SUM}>₹{grandTotal}</div></FI>
+        </>}
       </Row2>
     </AccSection>
 
@@ -358,12 +360,9 @@ function EXPFinancials({vehicle, fin, setF, pumps, userName, avgMileage, driverW
       <Row2>
         <FI label="Onroute Payment"><input value={fin.onroutePayment} onChange={e=>setF("onroutePayment",e.target.value)} style={INP} type="number" /></FI>
         <FI label="Onsite Receiving"><input value={fin.onsiteReceivingstatus} onChange={e=>setF("onsiteReceivingstatus",e.target.value)} style={INP} type="number" /></FI>
-        <FI label="Misc Expenses">
-          {canEdit("miscellaneousExpenses")
-            ? <input value={fin.miscellaneousExpenses} onChange={e=>setF("miscellaneousExpenses",e.target.value)} style={INP} type="number" />
-            : <div style={INP_RO}>{fin.miscellaneousExpenses||"—"}</div>
-          }
-        </FI>
+        {!isUserOnly && <FI label="Misc Expenses">
+            <input value={fin.miscellaneousExpenses} onChange={e=>setF("miscellaneousExpenses",e.target.value)} style={INP} type="number" />
+          </FI>}
         <FI label="Remaining Balance (auto)"><div style={remaining<0?INP_RED:INP_SUM}>₹{remaining}</div></FI>
       </Row2>
       <div style={{textAlign:"center",padding:"12px 0",borderTop:`1px solid ${C.border}`,marginTop:4}}>
@@ -481,12 +480,9 @@ function OthersFinancials({vehicle, fin, setF, pumps, userName}){
       <Row2>
         <FI label="Onroute Payment"><input value={fin.onroutePayment} onChange={e=>setF("onroutePayment",e.target.value)} style={INP} type="number" /></FI>
         <FI label="Onsite Receiving"><input value={fin.onsiteReceivingstatus} onChange={e=>setF("onsiteReceivingstatus",e.target.value)} style={INP} type="number" /></FI>
-        <FI label="Misc Expenses">
-          {canEdit("miscellaneousExpenses")
-            ? <input value={fin.miscellaneousExpenses} onChange={e=>setF("miscellaneousExpenses",e.target.value)} style={INP} type="number" />
-            : <div style={INP_RO}>{fin.miscellaneousExpenses||"—"}</div>
-          }
-        </FI>
+        {!isUserOnly && <FI label="Misc Expenses">
+            <input value={fin.miscellaneousExpenses} onChange={e=>setF("miscellaneousExpenses",e.target.value)} style={INP} type="number" />
+          </FI>}
         <FI label="Remaining Balance (auto)"><div style={remaining<0?INP_RED:INP_SUM}>₹{remaining}</div></FI>
       </Row2>
       <div style={{textAlign:"center",padding:"12px 0",borderTop:`1px solid ${C.border}`,marginTop:4}}>

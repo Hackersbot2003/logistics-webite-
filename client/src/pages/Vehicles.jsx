@@ -947,7 +947,7 @@ This will permanently remove the vehicle and all its data. This cannot be undone
 
       <div style={{ padding:"0 28px" }}>
         {/* Add Vehicle Button */}
-        {hasRole("superadmin","admin","manager")&&!isLocked&&(
+        {!isLocked&&(
           <button onClick={()=>{setEditVehicle(null);setShowForm(true);}} style={{ ...BTN(C.blue),marginBottom:16,boxShadow:"0 2px 8px rgba(37,99,235,0.3)" }}>
             + Add New Vehicle
           </button>
@@ -1030,11 +1030,11 @@ This will permanently remove the vehicle and all its data. This cannot be undone
                       <td style={{ padding:"11px 12px" }}>
                         <div style={{ display:"flex",gap:5 }}>
                           <ActionBtn title="View" color="#2563EB" hoverBg="#EFF6FF" onClick={()=>setViewVehicle(v)}><IconEye /></ActionBtn>
-                          {!isLocked&&hasRole("superadmin","admin","manager")&&(<>
+                          {!isLocked&&(<>
                             <ActionBtn title="Edit Tracking" color="#D97706" hoverBg="#FFFBEB" onClick={()=>setTrackVehicle(v)}><IconPin /></ActionBtn>
                             <ActionBtn title="Edit Full" color="#16A34A" hoverBg="#F0FDF4" onClick={()=>{setEditVehicle(v);setShowForm(true);}}><IconEdit /></ActionBtn>
                           </>)}
-                          {!isLocked&&hasRole("superadmin","admin")&&(
+                          {!isLocked&&(
                             <ActionBtn title="Delete" color="#EF4444" hoverBg="#FEF2F2" onClick={()=>doDelete(v)}><IconDel /></ActionBtn>
                           )}
                         </div>

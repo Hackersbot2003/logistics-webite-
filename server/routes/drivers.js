@@ -14,7 +14,6 @@ router.get("/:id", protect, getDriver);
 router.post(
   "/",
   protect,
-  authorize("superadmin", "admin", "manager"),
   driverUploadFields,
   createDriver
 );
@@ -22,7 +21,6 @@ router.post(
 router.put(
   "/:id",
   protect,
-  authorize("superadmin", "admin", "manager"),
   driverUploadFields,
   updateDriver
 );
@@ -30,7 +28,6 @@ router.put(
 router.delete(
   "/:id",
   protect,
-  authorize("superadmin", "admin"),
   deleteDriver
 );
 

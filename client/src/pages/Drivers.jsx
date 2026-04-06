@@ -677,7 +677,7 @@ export default function Drivers() {
 
       <div style={{ padding:"0 28px" }}>
         {/* Add Driver Button */}
-        {hasRole("superadmin","admin","manager") && (
+        {(
           <button onClick={() => setShowAdd(true)} style={{ ...BTN(C.blue), marginBottom:16, boxShadow:"0 2px 8px rgba(37,99,235,0.3)" }}>
             + Add New Driver
           </button>
@@ -735,12 +735,12 @@ export default function Drivers() {
                           <ActionBtn title="View" color="#2563EB" hoverBg="#EFF6FF" onClick={() => setViewDriver(d)}>
                             <IconEye />
                           </ActionBtn>
-                          {hasRole("superadmin","admin","manager") && (
+                          {(
                             <ActionBtn title="Edit" color="#16A34A" hoverBg="#F0FDF4" onClick={() => {setEditDriver(d);setShowAdd(true);}}>
                               <IconEdit />
                             </ActionBtn>
                           )}
-                          {hasRole("superadmin","admin") && (
+                          {(
                             <ActionBtn title="Delete" color="#EF4444" hoverBg="#FEF2F2" onClick={() => setDelDriver(d)}>
                               <IconDel />
                             </ActionBtn>
