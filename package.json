@@ -1,0 +1,18 @@
+{
+  "name": "drivesafe",
+  "version": "1.0.0",
+  "description": "DriveSafe Fleet Management — MERN Stack",
+  "private": true,
+  "scripts": {
+    "install:server": "cd server && npm install",
+    "install:client": "cd client && npm install",
+    "install:all": "cd server && npm install && cd ../client && npm install",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev",
+    "seed": "cd server && node config/seed.js",
+    "start:server": "cd server && node server.js"
+  },
+  "dependencies": {
+    "@pdf-lib/fontkit": "^1.1.1"
+  }
+}

@@ -1,0 +1,89 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: #080A0F;
+    color: #E2E8F0;
+    font-family: 'DM Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #0E1117;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #2A3347;
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #3D4F6B;
+  }
+
+  ::selection {
+    background: rgba(251, 191, 36, 0.2);
+    color: #FBBF24;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-amber-500 hover:bg-amber-400 text-ink-950 font-semibold font-display tracking-wide px-5 py-2.5 rounded-lg transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100;
+  }
+
+  .btn-ghost {
+    @apply bg-ink-700 hover:bg-ink-600 text-slate-300 hover:text-white font-medium px-5 py-2.5 rounded-lg transition-all duration-200 active:scale-95;
+  }
+
+  .btn-danger {
+    @apply bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 border border-red-500/20 font-medium px-4 py-2 rounded-lg transition-all duration-200;
+  }
+
+  .input-field {
+    @apply w-full bg-ink-800 border border-ink-600 focus:border-amber-500/60 focus:ring-1 focus:ring-amber-500/20 text-slate-200 placeholder-steel-400 rounded-lg px-4 py-2.5 text-sm outline-none transition-all duration-200;
+  }
+
+  .card {
+    @apply bg-ink-800 border border-ink-600 rounded-xl;
+  }
+
+  .label {
+    @apply block text-xs font-medium text-steel-300 uppercase tracking-widest mb-1.5;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium font-mono;
+  }
+}
+
+/* ── Responsive overrides ── */
+@media (max-width: 768px) {
+  .mobile-menu-btn { display: flex !important; }
+  aside { display: none !important; }
+  table { font-size: 12px !important; }
+  td, th { padding: 9px 8px !important; }
+}
+
+@media (max-width: 480px) {
+  .drivers-grid { grid-template-columns: 1fr !important; }
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
