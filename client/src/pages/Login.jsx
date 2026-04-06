@@ -69,10 +69,10 @@ export default function Login() {
             letterSpacing: "-1px",
             lineHeight: 1,
           }}>
-            DriveSafe
+            Shree Arya logistics
           </div>
           <div style={{ fontSize: "13px", color: "#475569", marginTop: "6px", fontFamily: "'JetBrains Mono', monospace" }}>
-            FLEET MANAGEMENT SYSTEM
+            TRANSPORT MANAGEMENT SYSTEM
           </div>
         </div>
 
