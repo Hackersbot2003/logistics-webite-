@@ -128,7 +128,7 @@ function FMLForm({ item, onClose, onSaved }) {
   return (
     <Modal title={isEdit ? "Edit Logistics Partner" : "Add Logistics Partner"} onClose={onClose}>
       <Fld label="Logistic Partner"><input name="logisticPartner" value={form.logisticPartner} onChange={set} style={INP} /></Fld>
-      <Fld label="Location"><input name="location" value={form.location} onChange={set} style={INP} /></Fld>
+      <Fld label="Place Of Delivery"><input name="location" value={form.location} onChange={set} style={INP} /></Fld>
       <Fld label="Consignee Name"><input name="consigneeName" value={form.consigneeName} onChange={set} style={INP} /></Fld>
       <Fld label="Consignee Region"><input name="consigneeRegion" value={form.consigneeRegion} onChange={set} style={INP} /></Fld>
       <Fld label="Consignee Address"><input name="consigneeAddress" value={form.consigneeAddress} onChange={set} style={INP} /></Fld>
