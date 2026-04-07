@@ -22,15 +22,39 @@ function Spin({dark,sm}){
   return<div style={{width:s,height:s,border:`2px solid ${dark?"rgba(0,0,0,0.1)":"rgba(255,255,255,0.3)"}`,borderTopColor:dark?C.blue:"#fff",borderRadius:"50%",animation:"bspin 0.7s linear infinite",display:"inline-block"}} />;
 }
 
-// Open PDF in new tab with auth token using fetch to handle authentication properly
-async function openPDF(path) {
+// Open PDF — window opened synchronously (avoids popup blocker), then HTML written in
+function openPDF(path) {
   const token = localStorage.getItem("ds_token");
-  api.get(path, { responseType: "text", headers: { Authorization: `Bearer ${token}` } })
+  // Open blank window synchronously from click event — won't be blocked
+  const w = window.open("", "_blank");
+  if (!w) { toast.error("Popup blocked — please allow popups for this site"); return; }
+  // Show loading page while we fetch
+  w.document.write(`<!DOCTYPE html><html><head><title>Loading…</title>
+    <style>body{font-family:Arial,sans-serif;display:flex;align-items:center;
+    justify-content:center;min-height:100vh;margin:0;background:#F8FAFC;}
+    .spinner{width:40px;height:40px;border:4px solid #E2E8F0;border-top-color:#2563EB;
+    border-radius:50%;animation:spin 0.8s linear infinite;}
+    @keyframes spin{to{transform:rotate(360deg)}}</style></head>
+    <body><div style="text-align:center"><div class="spinner"></div>
+    <p style="color:#64748B;margin-top:16px">Loading PDF…</p></div></body></html>`);
+  w.document.close();
+  // Fetch HTML with auth token
+  api.get(path, { responseType: "text" })
     .then(({ data }) => {
-      const w = window.open("", "_blank");
-      if (w) { w.document.open(); w.document.write(data); w.document.close(); }
+      w.document.open();
+      w.document.write(data);
+      w.document.close();
     })
-    .catch(e => toast.error(e?.response?.data?.message || "Failed to open PDF"));
+    .catch(err => {
+      const msg = typeof err?.response?.data === "string"
+        ? "PDF generation failed"
+        : err?.response?.data?.message || "Failed to open PDF";
+      w.document.open();
+      w.document.write(`<html><body style="font-family:Arial;padding:40px;color:#EF4444">
+        <h2>Error</h2><p>${msg}</p></body></html>`);
+      w.document.close();
+      toast.error(msg);
+    });
 }
 
 // ─── Inline Bills Table (no modal) ───────────────────────────────────────────
@@ -645,10 +669,10 @@ export default function Billing() {
                   <input value={annexBillNo} onChange={e=>setAnnexBillNo(e.target.value.replace(/[^0-9]/g,""))}
                     placeholder="e.g. 1 or 2" style={{...INP,padding:"8px 10px",fontSize:13}}/>
                 </div>
-                <button onClick={async ()=>{
+                <button onClick={()=>{
                   if(!annexSheetName) return toast.error("Select a sheet");
                   if(!annexBillNo.trim()) return toast.error("Enter a bill number");
-                  await openPDF(`/billing/annexure?vehicleSheetName=${encodeURIComponent(annexSheetName)}&billNo=${annexBillNo.trim()}`);
+                  openPDF(`/billing/annexure?vehicleSheetName=${encodeURIComponent(annexSheetName)}&billNo=${annexBillNo.trim()}`);
                 }} style={BTN(C.blue,"#fff",{padding:"9px 18px",whiteSpace:"nowrap"})}>
                   Open Annexure PDF
                 </button>
@@ -670,10 +694,10 @@ export default function Billing() {
                   <input value={tollBillNo} onChange={e=>setTollBillNo(e.target.value.replace(/[^0-9]/g,""))}
                     placeholder="e.g. 1 or 2" style={{...INP,padding:"8px 10px",fontSize:13}}/>
                 </div>
-                <button onClick={async ()=>{
+                <button onClick={()=>{
                   if(!tollSheetName) return toast.error("Select a sheet");
                   if(!tollBillNo.trim()) return toast.error("Enter a bill number");
-                  await openPDF(`/billing/toll-pdf?vehicleSheetName=${encodeURIComponent(tollSheetName)}&billNo=${tollBillNo.trim()}`);
+                  openPDF(`/billing/toll-pdf?vehicleSheetName=${encodeURIComponent(tollSheetName)}&billNo=${tollBillNo.trim()}`);
                 }} style={BTN(C.green,"#fff",{padding:"9px 18px",whiteSpace:"nowrap"})}>
                   Open Toll PDF
                 </button>

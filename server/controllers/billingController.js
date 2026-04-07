@@ -358,8 +358,11 @@ exports.generatePDF = async (req, res) => {
   try {
     const record = await BillingRecord.findById(req.params.id).populate('vehicles').lean();
     if (!record) return res.status(404).json({ message: 'Record not found' });
+    // Safety: ensure vehicles array exists
+    if (!record.vehicles) record.vehicles = [];
 
-    const allModels = [...new Set(record.vehicles.map(v => v.model))];
+    const validVehicles = (record.vehicles || []).filter(Boolean);
+    const allModels = [...new Set(validVehicles.map(v => v.model).filter(Boolean))];
     const mdDocs    = await ModelDetails.find({ model: { $in: allModels } }).lean();
     const modelDetailsMap = {};
     for (const md of mdDocs) modelDetailsMap[md.model] = md;
@@ -370,7 +373,7 @@ exports.generatePDF = async (req, res) => {
     const tollData  = tollDoc?.tollData || {};
 
     const calc = performCalculations({
-      vehicles: record.vehicles, modelDetailsMap, tollData, overallKm,
+      vehicles: validVehicles, modelDetailsMap, tollData, overallKm,
       miscRate: record.miscRate || 500, cgstRate: record.cgstRate || 9, sgstRate: record.sgstRate || 9,
       isUrbania: record.urbania, specialIncentive: record.urbaniaIncentive || 1000,
       sheetType: record.sheetType,
