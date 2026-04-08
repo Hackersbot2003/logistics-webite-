@@ -303,7 +303,7 @@ function BillingSheetsManager({ type, activeBillingSheet, onSheetSelect, selecte
                         {!isActive && !s.isLocked && hasRole("superadmin","admin","manager") && (
                           <button onClick={()=>setActive(s)} style={BTN(C.green,"#fff",{padding:"3px 8px",fontSize:11})}>Set Active</button>
                         )}
-                        {hasRole("superadmin","admin","manager") && (
+                        {hasRole("admin") && (
                           <button onClick={()=>toggleLock(s)}
                             style={BTN(s.isLocked?"#FEF2F2":"#FFFBEB",s.isLocked?C.red:C.yellow,
                               {padding:"3px 8px",fontSize:11,border:`1px solid ${s.isLocked?"#FECACA":"#FDE68A"}`})}>
@@ -311,7 +311,7 @@ function BillingSheetsManager({ type, activeBillingSheet, onSheetSelect, selecte
                           </button>
                         )}
                         {hasRole("superadmin","admin") && (
-                          <button onClick={()=>del(s)} style={BTN("#FEF2F2",C.red,{padding:"3px 8px",fontSize:11,border:"1px solid #FECACA"})}>🗑</button>
+                          <button onClick={()=>del(s)} style={BTN("#FEF2F2",C.red,{padding:"3px 8px",fontSize:11,border:"1px solid #c44444"})}>🗑</button>
                         )}
                       </div>
                     </td>
@@ -706,36 +706,48 @@ export default function Billing() {
           </div>
         </div>
 
-        {/* ═══ BILLING SHEETS + BILLS TABLE (SIDE BY SIDE) ═════════════════ */}
-        <div style={{display:"grid",gridTemplateColumns:"340px 1fr",gap:16,alignItems:"start"}}>
+       <div style={{display:"flex",flexDirection:"column",gap:16}}>
 
-          {/* LEFT: Billing Sheets Manager */}
-          <div style={{background:C.white,border:`1px solid ${C.border}`,borderRadius:10,padding:16}}>
-            <BillingSheetsManager
-              type={type}
-              activeBillingSheet={activeBilling}
-              selectedSheetName={selectedBillingSheet}
-              onSheetSelect={setSelectedBillingSheet}
-              onRefresh={() => { loadAll(); setBillsRefreshKey(k=>k+1); }}
-            />
-          </div>
+  {/* TOP: Bills Table */}
+  <div style={{background:C.white,border:`1px solid ${C.border}`,borderRadius:10,padding:16}}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+      <div style={{fontWeight:700,fontSize:13,color:C.text}}>
+        Bills {selectedBillingSheet ? `— ${selectedBillingSheet}` : ""}
+      </div>
+      {selectedBillingSheet && (
+        <select
+          value={selectedBillingSheet}
+          onChange={e=>setSelectedBillingSheet(e.target.value)}
+          style={{...SEL,width:"auto",padding:"5px 10px",fontSize:12}}
+        >
+          {billingSheets.map(s=>(
+            <option key={s._id} value={s.sheetName}>{s.sheetName}</option>
+          ))}
+        </select>
+      )}
+    </div>
 
-          {/* RIGHT: Bills Table */}
-          <div style={{background:C.white,border:`1px solid ${C.border}`,borderRadius:10,padding:16}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-              <div style={{fontWeight:700,fontSize:13,color:C.text}}>
-                Bills {selectedBillingSheet ? `— ${selectedBillingSheet}` : ""}
-              </div>
-              {selectedBillingSheet && (
-                <select value={selectedBillingSheet} onChange={e=>setSelectedBillingSheet(e.target.value)}
-                  style={{...SEL,width:"auto",padding:"5px 10px",fontSize:12}}>
-                  {billingSheets.map(s=><option key={s._id} value={s.sheetName}>{s.sheetName}</option>)}
-                </select>
-              )}
-            </div>
-            <BillsTable sheetName={selectedBillingSheet} refreshKey={billsRefreshKey} />
-          </div>
-        </div>
+    <BillsTable
+      sheetName={selectedBillingSheet}
+      refreshKey={billsRefreshKey}
+    />
+  </div>
+
+  {/* BOTTOM: Billing Sheets Manager */}
+  <div style={{background:C.white,border:`1px solid ${C.border}`,borderRadius:10,padding:16}}>
+    <BillingSheetsManager
+      type={type}
+      activeBillingSheet={activeBilling}
+      selectedSheetName={selectedBillingSheet}
+      onSheetSelect={setSelectedBillingSheet}
+      onRefresh={() => {
+        loadAll();
+        setBillsRefreshKey(k=>k+1);
+      }}
+    />
+  </div>
+
+</div>
 
       </div>
 

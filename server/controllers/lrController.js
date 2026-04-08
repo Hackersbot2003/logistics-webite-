@@ -266,7 +266,7 @@ tr, td, th {
     }
 
     /* ── Spacer pushes signature to bottom ── */
-    .flex-spacer { flex: 1; min-height: 2px; }
+   
 
     /* ── Section heading ── */
     .section-heading {
@@ -496,7 +496,7 @@ function buildPage(v, copy, signatureUrl, logoBase64, fmt) {
         </table>
 
         <!-- ══ SPACER pushes signatures to bottom ══ -->
-        <div class="flex-spacer"></div>
+      
 
         <!-- ══ SIGNATURE ROW ══ -->
         <table style="margin-bottom:0;">
