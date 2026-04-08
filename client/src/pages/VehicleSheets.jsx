@@ -166,6 +166,7 @@ function SheetManager({ sheetType }) {
   const { hasRole } = useAuth();
   const isSuperAdmin = hasRole("superadmin");
   const isAdmin = hasRole("superadmin", "admin");
+  const isAdminOnly = hasRole("admin");
 
   const [sheets, setSheets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -297,7 +298,7 @@ function SheetManager({ sheetType }) {
                   <th style={TH}>Sheet Name</th>
                   <th style={TH}>Status</th>
                   {/* Lock column only for EXP type (shown in screenshot 2) */}
-                  {sheetType === "FML_EXP" && <th style={TH}>Lock</th>}
+               {isAdminOnly && <th style={TH}>Lock</th>}
                   {/* Delete only for superadmin */}
                   {isSuperAdmin && <th style={{ ...TH, textAlign: "center" }}>Delete Sheet</th>}
                 </tr>
@@ -314,20 +315,20 @@ function SheetManager({ sheetType }) {
                         {s.status === "active" ? "Active ✅" : "Inactive"}
                       </span>
                     </td>
-                    {sheetType === "FML_EXP" && (
+                    {isAdminOnly && (
                       <td style={TD}>
-                        {isAdmin && (
+                        {isAdminOnly  && (
                           <button onClick={() => toggleLock(s._id)}
                             style={{ display: "inline-flex", alignItems: "center", gap: 5, background: s.isLocked ? "rgba(239,68,68,0.1)" : "rgba(245,158,11,0.1)", border: `1px solid ${s.isLocked ? "#EF4444" : "#F59E0B"}`, borderRadius: 20, padding: "4px 12px", cursor: "pointer", fontSize: 12, fontWeight: 600, color: s.isLocked ? C.red : "#D97706" }}>
                             {s.isLocked ? "🔒 Locked" : "🔓 Unlocked"}
                           </button>
                         )}
-                        {!isAdmin && (
+                        {!isAdminOnly  && (
                           <span style={{ fontSize: 13, color: C.muted }}>{s.isLocked ? "🔒 Locked" : "🔓 Unlocked"}</span>
                         )}
                       </td>
                     )}
-                    {isSuperAdmin && (
+                    {(isSuperAdmin || isAdminOnly) && (
                       <td style={{ ...TD, textAlign: "center" }}>
                         <button onClick={() => startDelete(s)}
                           style={{ background: "none", border: "none", cursor: "pointer", color: "#CBD5E1", fontSize: 16 }}

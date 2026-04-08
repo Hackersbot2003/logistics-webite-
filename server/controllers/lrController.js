@@ -9,12 +9,17 @@ const pdf = require('html-pdf');
 // ── Helper: HTML → PDF buffer ─────────────────────────────────────────────────
 function htmlToPdfBuffer(html) {
   return new Promise((resolve, reject) => {
-    pdf.create(html, {
-      format: 'A4',
-      orientation: 'portrait',
-      border: '0',
-      timeout: 30000,
-    }).toBuffer((err, buf) => (err ? reject(err) : resolve(buf)));
+   pdf.create(html, {
+  format: "A4",
+  orientation: "portrait",
+  border: {
+    top: "0mm",
+    right: "0mm",
+    bottom: "0mm",
+    left: "0mm",
+  },
+  timeout: 60000,
+}).toBuffer((err, buf) => (err ? reject(err) : resolve(buf)));
   });
 }
 
@@ -147,12 +152,14 @@ function buildLRHtml(v, signatureUrl, logoBase64) {
 
     /* ── One A4 page wrapper ── */
     .page {
-    
-      padding: 8mm;                /* equal padding on all 4 sides */
-      page-break-after: always;
-      display: flex;
-      flex-direction: column;
-    }
+  width: 210mm;
+  height: 297mm;              /* 🔥 FIXED A4 HEIGHT */
+  padding: 8mm;
+  page-break-after: always;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;           /* 🔥 prevents breaking */
+}
 
     /* ── Outer solid border ── */
     .outer-border {
@@ -166,15 +173,21 @@ function buildLRHtml(v, signatureUrl, logoBase64) {
 
     /* ── Inner border — actual content box ── */
     .inner-content {
-      width: 100%;
-      height: 100%;
-      border: 1px solid #000;
-      padding: 5mm 6mm;           /* comfortable internal padding */
-      display: flex;
-      flex-direction: column;
-      font-family: Arial, sans-serif;
-      overflow: hidden;
-    }
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+  
+  table, tr, td {
+  page-break-inside: avoid;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  -webkit-print-color-adjust: exact;
+}
 
     /* ── Tables ── */
     table {
@@ -186,25 +199,25 @@ function buildLRHtml(v, signatureUrl, logoBase64) {
       border: 1px solid #000;
       padding: 3px 5px;
       vertical-align: top;
-      font-size: 15px;
+      font-size: 10px;
       line-height: 1.3;
     }
 
     /* ── Header section ── */
     .header-title {
-      font-size: 20px;
+      font-size: 13px;
       font-weight: bold;
       text-align: center;
       padding: 2px 0;
     }
     .sub-title {
-      font-size: 15px;
+      font-size: 12px;
       text-align: center;
       line-height: 1.5;
       padding: 1px 0;
     }
     .doc-title {
-      font-size: 16px;
+      font-size: 14px;
       font-weight: bold;
       text-align: center;
       padding: 5px;
@@ -215,7 +228,7 @@ function buildLRHtml(v, signatureUrl, logoBase64) {
     /* ── Field labels ── */
     .lbl {
       font-weight: bold;
-      font-size: 15px;
+      font-size: 12px;
       display: block;
       margin-bottom: 1px;
       color: #333;
@@ -224,7 +237,7 @@ function buildLRHtml(v, signatureUrl, logoBase64) {
     /* ── ORIGINAL / DUPLICATE / TRIPLICATE badge ── */
     .copy-badge {
       font-weight: bold;
-      font-size: 15px;
+      font-size: 10px;
       text-align: right;
       vertical-align: middle;
       border: none !important;
@@ -239,7 +252,7 @@ function buildLRHtml(v, signatureUrl, logoBase64) {
 
     /* ── Remarks box ── */
     .remarks-box {
-      font-size: 15px;
+      font-size: 10px;
       line-height: 2;
       border: 1px solid #000;
       padding: 3px 5px;
@@ -268,7 +281,7 @@ function buildLRHtml(v, signatureUrl, logoBase64) {
     /* ── Section heading ── */
     .section-heading {
       font-weight: bold;
-      font-size: 15px;
+      font-size: 13px;
       margin: 2px 0 1px 0;
     }
 
