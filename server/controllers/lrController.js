@@ -147,8 +147,8 @@ function buildLRHtml(v, signatureUrl, logoBase64) {
 
     /* ── One A4 page wrapper ── */
     .page {
-      width :100%;
-      height: 100%;
+     width: 210mm;
+  height: 297mm;
       padding: 8mm;                /* equal padding on all 4 sides */
       page-break-after: always;
       display: flex;
