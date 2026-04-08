@@ -147,61 +147,51 @@ function buildLRHtml(v, signatureUrl, logoBase64) {
   const copies = ['ORIGINAL', 'DUPLICATE', 'TRIPLICATE'];
 
   const css = `
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { background: #fff; }
+   * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* ── One A4 page wrapper ── */
-    .page {
-  width: 210mm;
-  height: 297mm;              /* 🔥 FIXED A4 HEIGHT */
-  padding: 8mm;
-  page-break-after: always;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;           /* 🔥 prevents breaking */
-}
-
-    /* ── Outer solid border ── */
-    .outer-border {
-      width: 100%;
-      height: 100%;
-      border: 2px solid #000;
-      padding: 3mm;               /* gap between outer and inner border */
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* ── Inner border — actual content box ── */
-    .inner-content {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-  
-  table, tr, td {
-  page-break-inside: avoid;
-}
-
-body {
+html, body {
+  background: #fff;
   font-family: Arial, sans-serif;
   -webkit-print-color-adjust: exact;
 }
 
-    /* ── Tables ── */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 3px;
-    }
-    td, th {
-      border: 1px solid #000;
-      padding: 3px 5px;
-      vertical-align: top;
-      font-size: 10px;
-      line-height: 1.3;
-    }
+/* A4 PAGE */
+.page {
+  width: 210mm;
+  height: 297mm;
+  padding: 8mm;
+  page-break-after: always;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* INNER BOX */
+.inner-content {
+  width: 100%;
+  height: 100%;
+  border: 1px solid #000;
+  padding: 5mm 6mm;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* TABLE SAFETY */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 3px;
+  page-break-inside: avoid;
+}
+
+tr, td, th {
+  border: 1px solid #000;
+  padding: 3px 5px;
+  font-size: 10px;
+  line-height: 1.3;
+  page-break-inside: avoid;
+}
 
     /* ── Header section ── */
     .header-title {
