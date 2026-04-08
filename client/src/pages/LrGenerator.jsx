@@ -262,18 +262,36 @@ export default function LrGenerator() {
       }
 
       const token = localStorage.getItem("ds_token");
+
+      // Open window synchronously (popup-blocker safe), then load PDF into it
+      const w = window.open("", "_blank");
+      if (!w) throw new Error("Popup blocked — please allow popups for this site");
+
+      // Show loading in new tab
+      w.document.write(`<!DOCTYPE html><html><head><title>Loading LR…</title>
+        <style>body{font-family:Arial,sans-serif;display:flex;align-items:center;
+        justify-content:center;min-height:100vh;margin:0;background:#F8FAFC;}
+        .sp{width:40px;height:40px;border:4px solid #E2E8F0;border-top-color:#2563EB;
+        border-radius:50%;animation:spin 0.8s linear infinite;}
+        @keyframes spin{to{transform:rotate(360deg)}}</style></head>
+        <body><div style="text-align:center"><div class="sp"></div>
+        <p style="color:#64748B;margin-top:16px">Generating LR Challan…</p></div></body></html>`);
+      w.document.close();
+
       const response = await fetch(`/api/lr/generate?${params.toString()}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
+        w.close();
         throw new Error(err.message || "Generation failed");
       }
 
       const blob = await response.blob();
       const url  = URL.createObjectURL(blob);
-      window.open(url, "_blank");
+      // Navigate the already-open window to the PDF blob
+      w.location.href = url;
       toast.success("LR generated!");
     } catch (e) {
       toast.error(e.message || "Failed to generate LR");
