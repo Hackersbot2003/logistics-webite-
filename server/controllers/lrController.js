@@ -188,26 +188,26 @@ table {
 tr, td, th {
   border: 1px solid #000;
   padding: 3px 5px;
-  font-size: 10px;
+  font-size: 8px;
   line-height: 1.3;
   page-break-inside: avoid;
 }
 
     /* ── Header section ── */
     .header-title {
-      font-size: 13px;
+      font-size: 10px;
       font-weight: bold;
       text-align: center;
       padding: 2px 0;
     }
     .sub-title {
-      font-size: 12px;
+      font-size: 9px;
       text-align: center;
       line-height: 1.5;
       padding: 1px 0;
     }
     .doc-title {
-      font-size: 14px;
+      font-size: 12px;
       font-weight: bold;
       text-align: center;
       padding: 5px;
@@ -218,7 +218,7 @@ tr, td, th {
     /* ── Field labels ── */
     .lbl {
       font-weight: bold;
-      font-size: 12px;
+      font-size: 9px;
       display: block;
       margin-bottom: 1px;
       color: #333;
@@ -227,7 +227,7 @@ tr, td, th {
     /* ── ORIGINAL / DUPLICATE / TRIPLICATE badge ── */
     .copy-badge {
       font-weight: bold;
-      font-size: 10px;
+      font-size: 9px;
       text-align: right;
       vertical-align: middle;
       border: none !important;
@@ -235,14 +235,14 @@ tr, td, th {
     .no-border td { border: none !important; }
 
     /* ── Checklist header row ── */
-    .chk-header { background: #eeeeee; font-weight: bold; font-size: 15px; }
+    .chk-header { background: #eeeeee; font-weight: bold; font-size: 9px; }
 
     /* ── Rating table header ── */
-    .rating-header { background: #eeeeee; font-weight: bold; font-size: 15px; text-align: center; }
+    .rating-header { background: #eeeeee; font-weight: bold; font-size: 9px; text-align: center; }
 
     /* ── Remarks box ── */
     .remarks-box {
-      font-size: 10px;
+      font-size: 8px;
       line-height: 2;
       border: 1px solid #000;
       padding: 3px 5px;
@@ -255,7 +255,7 @@ tr, td, th {
       vertical-align: bottom;
       text-align: center;
       font-weight: bold;
-      font-size: 15px;
+      font-size: 9px;
       padding-bottom: 4px;
     }
     .sig-img {
@@ -271,7 +271,7 @@ tr, td, th {
     /* ── Section heading ── */
     .section-heading {
       font-weight: bold;
-      font-size: 13px;
+      font-size: 9px;
       margin: 2px 0 1px 0;
     }
 
@@ -289,7 +289,7 @@ function buildPage(v, copy, signatureUrl, logoBase64, fmt) {
 
   const logoHtml = logoBase64
     ? `<img src="${logoBase64}" style="max-width:80px; max-height:75px; object-fit:contain; display:block; margin:auto;" />`
-    : `<div style="font-size:28px; text-align:center;">🚛</div>`;
+    : `<div style="font-size:18px; text-align:center;">🚛</div>`;
 
   const modelDisplay = [v.model, v.modelInfo, v.modelDetails].filter(Boolean).join(' ');
 
