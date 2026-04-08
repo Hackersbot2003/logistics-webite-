@@ -205,16 +205,15 @@ function SheetManager({ sheetType }) {
     finally { setCreating(false); }
   };
 
-  const setActive = async (id) => {
-    try {
-      // deactivate all, activate chosen
-      for (const s of sheets) {
-        await api.patch(`/vehicle-sheets/${s._id}/status`, { status: s._id === id ? "active" : "inactive" });
-      }
-      setActiveId(id);
-      load();
-    } catch { toast.error("Failed to set active"); }
-  };
+ const setActive = async (id) => {
+  try {
+    await api.patch(`/vehicle-sheets/set-active/${id}`);
+    setActiveId(id);
+    load();
+  } catch {
+    toast.error("Failed to set active");
+  }
+};
 
   const toggleLock = async (id) => {
     try { await api.patch(`/vehicle-sheets/${id}/lock`); load(); }

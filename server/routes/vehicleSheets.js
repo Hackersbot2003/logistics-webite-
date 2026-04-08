@@ -1,7 +1,7 @@
 const router = require("express").Router();
 const {
   listSheets, createSheet, toggleLock, deleteSheet, setStatus,
-  listPumps, createPump, deletePump,
+  listPumps, createPump, deletePump,setActiveSheet
 } = require("../controllers/vehicleSheetController");
 const { protect, authorize } = require("../middleware/auth");
 
@@ -18,5 +18,7 @@ router.post("/",             authorize("superadmin", "admin"), createSheet);
 router.patch("/:id/lock",    authorize("superadmin", "admin"), toggleLock);
 router.patch("/:id/status",  authorize("superadmin", "admin"), setStatus);
 router.delete("/:id",        authorize("superadmin"), deleteSheet);  // superadmin only
+
+router.patch("/set-active/:id", setActiveSheet);
 
 module.exports = router;

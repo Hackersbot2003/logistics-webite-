@@ -17,4 +17,17 @@ const vehicleSheetSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+
+// ✅ ADD THIS BLOCK HERE
+vehicleSheetSchema.pre("save", async function (next) {
+  if (this.status === "active") {
+    await this.constructor.updateMany(
+      { sheetType: this.sheetType, _id: { $ne: this._id } },
+      { status: "inactive" }
+    );
+  }
+  next();
+});
+
+
 module.exports = mongoose.model("VehicleSheet", vehicleSheetSchema);

@@ -153,4 +153,33 @@ const deletePump = async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
 
-module.exports = { listSheets, createSheet, toggleLock, deleteSheet, setStatus, listPumps, createPump, deletePump };
+// controllers/vehicleSheetsController.js
+
+ const setActiveSheet = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // find selected sheet
+    const sheet = await VehicleSheet.findById(id);
+    if (!sheet) {
+      return res.status(404).json({ message: "Sheet not found" });
+    }
+
+    // 🔥 IMPORTANT: deactivate ALL of same type
+    await VehicleSheet.updateMany(
+      { sheetType: sheet.sheetType },
+      { status: "inactive" }
+    );
+
+    // activate selected
+    sheet.status = "active";
+    await sheet.save();
+
+    res.json({ message: "Active sheet updated" });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to set active sheet" });
+  }
+};
+
+module.exports = { listSheets, createSheet, toggleLock, deleteSheet, setStatus, listPumps, createPump, deletePump,setActiveSheet };
+
