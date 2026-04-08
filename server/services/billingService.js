@@ -277,12 +277,17 @@ function buildBillingHTML({ record, calc, overallKm, sheetType }) {
   const today = new Date().toLocaleDateString('en-GB');
 
   const css = `
-    body{font-family:Arial,sans-serif;margin:10px;padding:0;font-size:10px}
+    *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    html,body{font-family:Arial,Helvetica,sans-serif;margin:0;padding:8px;font-size:10px;color:#000;background:#fff}
     table{width:100%;border-collapse:collapse}
-    td,th{border:1px solid #000;padding:5px;vertical-align:top}
+    td,th{border:1px solid #000;padding:4px 5px;vertical-align:top;word-break:break-word}
     .text-center{text-align:center} .text-right{text-align:right}
-    .bold{font-weight:bold} .pb{page-break-after:always;margin:16px 0}
-    @page{size:A4;margin:1cm} @media print{.pb{page-break-after:always}}`;
+    .bold{font-weight:bold}
+    .pb{page-break-after:always;margin:0;padding:0;border:none;height:0}
+    b,strong{font-weight:bold} p{margin:4px 0}
+    @page{size:A4 portrait;margin:1cm}
+    @media print{html,body{margin:0;padding:0;font-size:9px}.pb{page-break-after:always}button{display:none!important}}
+    @media screen{body{max-width:210mm;margin:0 auto;padding:10px;box-shadow:0 0 10px rgba(0,0,0,0.1)}}`;
 
   const supplierTd = `<b>${SUPPLIER.name}</b><br>${SUPPLIER.address.replace(/\n/g,'<br>')}
     <br>GSTIN No.:- ${SUPPLIER.gstin}<br>PAN No. :- ${SUPPLIER.pan}
@@ -419,7 +424,7 @@ function buildBillingHTML({ record, calc, overallKm, sheetType }) {
 
   // EXP-FML: transport only
   if (sheetType === 'FML_EXP') {
-    return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${css}</style></head><body>${transPage}</body></html>`;
+    return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${css}</style></head><body>${transPage}<script>window.onload=function(){document.title="Bill_${record.billNoPair}";}</script></body></html>`;
   }
 
   // ── Toll page (FML only) ───────────────────────────────────────────────────
@@ -464,10 +469,11 @@ function buildBillingHTML({ record, calc, overallKm, sheetType }) {
     </tr></table>
     <table><tr><td style="font-size:10px"><b>Regd. Office :</b> ________________________________</td></tr></table>`;
 
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${css}</style></head><body>
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${css}</style></head><body>
     ${transPage}
     <div class="pb"></div>
     ${tollPage}
+    <script>window.onload=function(){document.title="Bill_${record.billNoPair}";}</script>
   </body></html>`;
 }
 

@@ -7,6 +7,7 @@ const LogisticsData      = require('../models/LogisticsData');
 const Toll               = require('../models/Toll');
 const { getSheetsClient } = require('../config/google');
 const logger             = require('../config/logger');
+const { uploadFileToDrive } = require('../services/driveService');
 const {
   CUSTOM_HEADERS, performCalculations, buildVehicleRow,
   buildBillingHTML, ensureBillingTab, appendVehicleRows, markVehiclesBilledInSheet,
@@ -344,8 +345,27 @@ exports.generateBill = async (req, res) => {
         .catch(e => logger.warn(`Mark billed: ${e.message}`));
     }
 
-    // FIX: Return HTML for the PDF directly in the response so frontend can open it
     const populatedRecord = { ...record.toObject(), vehicles };
+
+    // Upload bill HTML as PDF to Google Drive (fire-and-forget — does not block response)
+    (async () => {
+      try {
+        const { buildBillingHTML } = require('../services/billingService');
+        const html = buildBillingHTML({ record: populatedRecord, calc, overallKm, sheetType });
+        // Convert HTML string to Buffer and upload as HTML file (opens in browser like PDF)
+        const htmlBuffer = Buffer.from(html, 'utf-8');
+        const filename = `BILL_${billNoPair}_${consigneeName}_${location}.html`;
+        const driveFile = await uploadFileToDrive(htmlBuffer, filename, 'text/html', 'Billing_PDFs');
+        await BillingRecord.findByIdAndUpdate(record._id, {
+          driveFileId: driveFile.id,
+          driveViewLink: driveFile.webViewLink || driveFile.webContentLink,
+        });
+        logger.info(`Billing PDF uploaded to Drive: ${driveFile.id}`);
+      } catch (e) {
+        logger.warn(`Drive upload for billing failed: ${e.message}`);
+      }
+    })();
+
     res.status(201).json({ record: populatedRecord, calc, invoiceNo, tollBillNo, billNoPair, vehicles });
   } catch (err) {
     logger.error('generateBill error:', err.message);

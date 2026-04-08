@@ -35,8 +35,13 @@ const FI = ({label,children}) => (
   </div>
 );
 const AccSection = ({title,children,blue}) => (
-  <div style={{background:C.white,borderRadius:10,padding:18,marginBottom:12,border:`1px solid ${blue?"#BFDBFE":C.border}`,background:blue?"#EFF6FF":C.white}}>
-    <div style={{fontWeight:700,fontSize:13,color:blue?C.blue:C.text,marginBottom:14,textTransform:"uppercase",letterSpacing:"0.06em",borderBottom:`1px solid ${blue?"#BFDBFE":C.border}`,paddingBottom:8}}>{title}</div>
+  <div style={{
+    borderRadius: 10, 
+    padding: 18, 
+    marginBottom: 12, 
+    border: `1px solid ${blue ? "#BFDBFE" : C.border}`, 
+    background: blue ? "#EFF6FF" : C.white 
+  }}><div style={{fontWeight:700,fontSize:13,color:blue?C.blue:C.text,marginBottom:14,textTransform:"uppercase",letterSpacing:"0.06em",borderBottom:`1px solid ${blue?"#BFDBFE":C.border}`,paddingBottom:8}}>{title}</div>
     {children}
   </div>
 );
@@ -872,7 +877,11 @@ function AccountsTable({ sheetType }) {
             ].map(([label,value])=>value?(
               <div key={label} style={{display:"flex",gap:8,padding:"6px 0",borderBottom:"1px solid #F1F5F9"}}>
                 <span style={{minWidth:160,fontSize:12,fontWeight:600,color:"#64748B",textTransform:"uppercase",letterSpacing:"0.04em"}}>{label}</span>
-                <span style={{fontSize:13,color:"#1E293B",fontWeight:label==="Billed"?700:400,color:label==="Billed"&&viewVehicle.billed?"#B45309":"#1E293B"}}>{value||"—"}</span>
+               <span style={{ 
+  fontSize: 13, 
+  fontWeight: label === "Billed" ? 700 : 400, 
+  color: (label === "Billed" && viewVehicle.billed) ? "#B45309" : "#1E293B" 
+}}>{value||"—"}</span>
               </div>
             ):null)}
             <div style={{marginTop:16,display:"flex",justifyContent:"flex-end"}}>

@@ -228,55 +228,101 @@ function ModelForm({ item, partner, onClose, onSaved }) {
 }
 
 // ─── Toll Form ────────────────────────────────────────────────────────────────
-function TollForm({ item, models, locations, onClose, onSaved }) {
+// ─── Toll Form ────────────────────────────────────────────────────────────────
+function TollForm({ item, models = [], locations = [], onClose, onSaved }) {
   const isEdit = Boolean(item);
   const [location, setLocation] = useState(item?.location || "");
+  const [customLocation, setCustomLocation] = useState("");
   const [tollData, setTollData] = useState(item?.tollData || {});
   const [saving, setSaving] = useState(false);
 
   const uniqueModels = [...new Set(models.map(m => m.model))];
 
   const submit = async () => {
-    if (!location.trim()) return toast.error("Location required");
+    // Determine the final location value: either the selected one or the custom typed one
+    const finalLocation = location === "__custom__" ? customLocation : location;
+
+    if (!finalLocation.trim()) return toast.error("Location required");
     setSaving(true);
     try {
-      const payload = { location, tollData };
-      if (isEdit) { await api.put(`/logistics/tolls/${item._id}`, payload); toast.success("Updated"); }
-      else { await api.post("/logistics/tolls", payload); toast.success("Added"); }
-      onSaved(); onClose();
-    } catch(err) { toast.error(err.response?.data?.message || "Failed"); }
-    finally { setSaving(false); }
+      const payload = { location: finalLocation, tollData };
+      if (isEdit) { 
+        await api.put(`/logistics/tolls/${item._id}`, payload); 
+        toast.success("Updated"); 
+      } else { 
+        await api.post("/logistics/tolls", payload); 
+        toast.success("Added"); 
+      }
+      onSaved(); 
+      onClose();
+    } catch(err) { 
+      toast.error(err.response?.data?.message || "Failed"); 
+    } finally { 
+      setSaving(false); 
+    }
   };
 
   return (
-    <Modal title={isEdit?"Edit Toll Data":"Add New Toll Data"} onClose={onClose} width="min(95vw,560px)">
+    <Modal title={isEdit ? "Edit Toll Data" : "Add New Toll Data"} onClose={onClose} width="min(95vw,560px)">
       <Fld label="Location *">
-        {isEdit
-          ? <input value={location} onChange={e=>setLocation(e.target.value)} style={INP} />
-          : <select value={location} onChange={e=>setLocation(e.target.value)} style={{...INP, cursor:"pointer"}}>
-              <option value="">Select location from fixed data</option>
-              {locations.map(l=><option key={l} value={l}>{l}</option>)}
-              <option value="__custom__">+ Enter manually</option>
+        {isEdit ? (
+          <input value={location} onChange={e => setLocation(e.target.value)} style={INP} />
+        ) : (
+          <>
+            <select 
+              value={location} 
+              onChange={e => setLocation(e.target.value)} 
+              style={{ ...INP, cursor: "pointer" }}
+            >
+              <option value="">Select location from logistics data</option>
+              {locations.map(l => (
+                <option key={l} value={l}>{l}</option>
+              ))}
+             
             </select>
-        }
-        {location === "__custom__" && <input placeholder="Type location" onChange={e=>setLocation(e.target.value)} style={{...INP, marginTop:8}} />}
+            
+            {location === "__custom__" && (
+              <input 
+                placeholder="Type location name manually" 
+                value={customLocation}
+                onChange={e => setCustomLocation(e.target.value)} 
+                style={{ ...INP, marginTop: 8 }} 
+                autoFocus
+              />
+            )}
+          </>
+        )}
       </Fld>
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginTop:8 }}>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 8 }}>
         {uniqueModels.map(m => (
           <Fld key={m} label={m}>
-            <input type="number" placeholder="Enter amount" value={tollData[m] || ""} onChange={e=>setTollData(p=>({...p,[m]:e.target.value}))} style={INP} />
+            <input 
+              type="number" 
+              placeholder="Enter amount" 
+              value={tollData[m] || ""} 
+              onChange={e => setTollData(p => ({ ...p, [m]: e.target.value }))} 
+              style={INP} 
+            />
           </Fld>
         ))}
         {uniqueModels.length === 0 && (
           <>
-            <Fld label="t1"><input type="number" placeholder="Enter amount" value={tollData["t1"]||""} onChange={e=>setTollData(p=>({...p,t1:e.target.value}))} style={INP} /></Fld>
-            <Fld label="r3"><input type="number" placeholder="Enter amount" value={tollData["r3"]||""} onChange={e=>setTollData(p=>({...p,r3:e.target.value}))} style={INP} /></Fld>
+            <Fld label="t1">
+              <input type="number" placeholder="Enter amount" value={tollData["t1"] || ""} onChange={e => setTollData(p => ({ ...p, t1: e.target.value }))} style={INP} />
+            </Fld>
+            <Fld label="r3">
+              <input type="number" placeholder="Enter amount" value={tollData["r3"] || ""} onChange={e => setTollData(p => ({ ...p, r3: e.target.value }))} style={INP} />
+            </Fld>
           </>
         )}
       </div>
-      <div style={{ display:"flex", gap:10, justifyContent:"flex-end", marginTop:16 }}>
+
+      <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 16 }}>
         <button onClick={onClose} style={BTN("#F1F5F9", C.muted)}>Cancel</button>
-        <button onClick={submit} disabled={saving} style={BTN(C.blue)}>{saving?"Saving…":"Save Toll Data"}</button>
+        <button onClick={submit} disabled={saving} style={BTN(C.blue)}>
+          {saving ? "Saving…" : "Save Toll Data"}
+        </button>
       </div>
     </Modal>
   );
@@ -284,9 +330,9 @@ function TollForm({ item, models, locations, onClose, onSaved }) {
 
 // ─── FML Section ──────────────────────────────────────────────────────────────
 function FMLSection() {
-  const [items, setItems]   = useState([]);
+  const [items, setItems] = useState([]);
   const [models, setModels] = useState([]);
-  const [tolls, setTolls]   = useState([]);
+  const [tolls, setTolls] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [editItem, setEditItem] = useState(null);
@@ -300,12 +346,19 @@ function FMLSection() {
 
   const load = useCallback(async () => {
     try {
-      const [l, m, t] = await Promise.all([api.get("/logistics/fml?partner=FML"), api.get("/logistics/models?partner=FML"), api.get("/logistics/tolls")]);
+      const [l, m, t] = await Promise.all([
+        api.get("/logistics/fml?partner=FML"), 
+        api.get("/logistics/models?partner=FML"), 
+        api.get("/logistics/tolls")
+      ]);
       setItems(l.data.items);
       setModels(m.data.items);
       setTolls(t.data.tolls);
-    } catch { toast.error("Failed to load FML data"); }
-    finally { setLoading(false); }
+    } catch { 
+      toast.error("Failed to load FML data"); 
+    } finally { 
+      setLoading(false); 
+    }
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -314,51 +367,59 @@ function FMLSection() {
   const modelsTable = usePaginatedSort(models, "model");
   const filteredTolls = tolls.filter(t => t.location.toLowerCase().includes(tollSearch.toLowerCase()));
 
+  // Get unique locations from logistics partner management for the dropdown
+  const availableLocations = [...new Set(items.map(item => item.location).filter(Boolean))].sort();
+
   const doDelete = async () => {
     try {
       if (delType === "logistics") await api.delete(`/logistics/fml/${delItem._id}`);
       else if (delType === "model") await api.delete(`/logistics/models/${delItem._id}`);
       else await api.delete(`/logistics/tolls/${delItem._id}`);
-      toast.success("Deleted"); load(); setDelItem(null);
-    } catch { toast.error("Delete failed"); setDelItem(null); }
+      toast.success("Deleted"); 
+      load(); 
+      setDelItem(null);
+    } catch { 
+      toast.error("Delete failed"); 
+      setDelItem(null); 
+    }
   };
 
-  if (loading) return <div style={{ padding:40, textAlign:"center", color:C.muted }}>Loading FML data…</div>;
+  if (loading) return <div style={{ padding: 40, textAlign: "center", color: C.muted }}>Loading FML data…</div>;
 
   return (
     <div>
       {/* Logistics Partner Table */}
       <Section title="🚛 Logistics Partner Management" onAdd={() => setShowAdd(true)} addLabel="+ Add New Logistics Partner">
         <TableToolbar search={itemsTable.search} onSearch={itemsTable.setSearch} total={itemsTable.total} label="entries" />
-        <table style={{ width:"100%", borderCollapse:"collapse" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
-            <tr style={{ background:C.panel }}>
-              {[["logisticPartner","Logistic Partner"],["location","Location"],["consigneeName","Consignee Name"],["consigneeRegion","Consignee Region"],["consigneeAddress","Consignee Address"],["overallKM","Overall KM"],["returnFare","Return Fare"]].map(([f,h])=>(
-                <th key={f} onClick={()=>itemsTable.handleSort(f)} style={{ padding:"10px 12px", textAlign:"left", fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.06em", borderBottom:`1px solid ${C.border}`, cursor:"pointer", whiteSpace:"nowrap" }}>
+            <tr style={{ background: C.panel }}>
+              {[["logisticPartner", "Logistic Partner"], ["location", "Location"], ["consigneeName", "Consignee Name"], ["consigneeRegion", "Consignee Region"], ["consigneeAddress", "Consignee Address"], ["overallKM", "Overall KM"], ["returnFare", "Return Fare"]].map(([f, h]) => (
+                <th key={f} onClick={() => itemsTable.handleSort(f)} style={{ padding: "10px 12px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: `1px solid ${C.border}`, cursor: "pointer", whiteSpace: "nowrap" }}>
                   {h} <itemsTable.SortIcon f={f} />
                 </th>
               ))}
-              <th style={{ padding:"10px 12px", textAlign:"left", fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.06em", borderBottom:`1px solid ${C.border}` }}>Actions</th>
+              <th style={{ padding: "10px 12px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: `1px solid ${C.border}` }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {itemsTable.paginated.length === 0 ? (
-              <tr><td colSpan={8} style={{ textAlign:"center", padding:40, color:C.muted }}>No logistics data found.</td></tr>
-            ) : itemsTable.paginated.map((d,i) => (
-              <tr key={d._id} style={{ borderBottom:`1px solid ${C.border}` }}
-                onMouseEnter={e=>e.currentTarget.style.background=C.panel}
-                onMouseLeave={e=>e.currentTarget.style.background="#fff"}>
-                <td style={{ padding:"10px 12px", fontSize:13, fontWeight:600 ,color:C.text}}>{d.logisticPartner}</td>
-                <td style={{ padding:"10px 12px", fontSize:13,color:C.text }}>{d.location}</td>
-                <td style={{ padding:"10px 12px", fontSize:13 ,color:C.text}}>{d.consigneeName}</td>
-                <td style={{ padding:"10px 12px", fontSize:13 ,color:C.text}}>{d.consigneeRegion}</td>
-                <td style={{ padding:"10px 12px", fontSize:13, maxWidth:180,color:C.text }}>{d.consigneeAddress?.length>30?d.consigneeAddress.slice(0,30)+"…":d.consigneeAddress}</td>
-                <td style={{ padding:"10px 12px", fontSize:13 ,color:C.text}}>{d.overallKM}</td>
-                <td style={{ padding:"10px 12px", fontSize:13 ,color:C.text}}>{d.returnFare}</td>
-                <td style={{ padding:"10px 12px" }}>
-                  <div style={{ display:"flex", gap:6 }}>
-                    <button onClick={()=>setEditItem(d)} style={{ ...BTN(C.yellow), padding:"5px 12px" }}>Edit</button>
-                    <button onClick={()=>{ setDelItem(d); setDelType("logistics"); }} style={{ ...BTN(C.red), padding:"5px 12px" }}>Delete</button>
+              <tr><td colSpan={8} style={{ textAlign: "center", padding: 40, color: C.muted }}>No logistics data found.</td></tr>
+            ) : itemsTable.paginated.map((d, i) => (
+              <tr key={d._id} style={{ borderBottom: `1px solid ${C.border}` }}
+                onMouseEnter={e => e.currentTarget.style.background = C.panel}
+                onMouseLeave={e => e.currentTarget.style.background = "#fff"}>
+                <td style={{ padding: "10px 12px", fontSize: 13, fontWeight: 600, color: C.text }}>{d.logisticPartner}</td>
+                <td style={{ padding: "10px 12px", fontSize: 13, color: C.text }}>{d.location}</td>
+                <td style={{ padding: "10px 12px", fontSize: 13, color: C.text }}>{d.consigneeName}</td>
+                <td style={{ padding: "10px 12px", fontSize: 13, color: C.text }}>{d.consigneeRegion}</td>
+                <td style={{ padding: "10px 12px", fontSize: 13, maxWidth: 180, color: C.text }}>{d.consigneeAddress?.length > 30 ? d.consigneeAddress.slice(0, 30) + "…" : d.consigneeAddress}</td>
+                <td style={{ padding: "10px 12px", fontSize: 13, color: C.text }}>{d.overallKM}</td>
+                <td style={{ padding: "10px 12px", fontSize: 13, color: C.text }}>{d.returnFare}</td>
+                <td style={{ padding: "10px 12px" }}>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button onClick={() => setEditItem(d)} style={{ ...BTN(C.yellow), padding: "5px 12px" }}>Edit</button>
+                    <button onClick={() => { setDelItem(d); setDelType("logistics"); }} style={{ ...BTN(C.red), padding: "5px 12px" }}>Delete</button>
                   </div>
                 </td>
               </tr>
@@ -369,43 +430,43 @@ function FMLSection() {
       </Section>
 
       {/* Model Details Table */}
-      <Section title="🔧 Model Details Management" onAdd={() => setShowModelAdd(true)} addLabel="+ Add New Model Detail" style={{ marginTop:24 }}>
+      <Section title="🔧 Model Details Management" onAdd={() => setShowModelAdd(true)} addLabel="+ Add New Model Detail" style={{ marginTop: 24 }}>
         <TableToolbar search={modelsTable.search} onSearch={modelsTable.setSearch} total={modelsTable.total} label="models" />
-        <table style={{ width:"100%", borderCollapse:"collapse" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
-            <tr style={{ background:C.panel }}>
-              {[["logisticPartner","Logistic Partner"],["model","Model"]].map(([f,h])=>(
-                <th key={f} onClick={()=>modelsTable.handleSort(f)} style={{ padding:"10px 12px", textAlign:"left", fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.06em", borderBottom:`1px solid ${C.border}`, cursor:"pointer" }}>
+            <tr style={{ background: C.panel }}>
+              {[["logisticPartner", "Logistic Partner"], ["model", "Model"]].map(([f, h]) => (
+                <th key={f} onClick={() => modelsTable.handleSort(f)} style={{ padding: "10px 12px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: `1px solid ${C.border}`, cursor: "pointer" }}>
                   {h} <modelsTable.SortIcon f={f} />
                 </th>
               ))}
-              {["Model Specs","Average","Driver Wages","Vehicle Rate","Billing Code","Actions"].map(h=>(
-                <th key={h} style={{ padding:"10px 12px", textAlign:"left", fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.06em", borderBottom:`1px solid ${C.border}` }}>{h}</th>
+              {["Model Specs", "Average", "Driver Wages", "Vehicle Rate", "Billing Code", "Actions"].map(h => (
+                <th key={h} style={{ padding: "10px 12px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: `1px solid ${C.border}` }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {modelsTable.paginated.length === 0 ? (
-              <tr><td colSpan={8} style={{ textAlign:"center", padding:40, color:C.muted }}>No model details found.</td></tr>
+              <tr><td colSpan={8} style={{ textAlign: "center", padding: 40, color: C.muted }}>No model details found.</td></tr>
             ) : modelsTable.paginated.map(m => (
-              <tr key={m._id} style={{ borderBottom:`1px solid ${C.border}` }}
-                onMouseEnter={e=>e.currentTarget.style.background=C.panel}
-                onMouseLeave={e=>e.currentTarget.style.background="#fff"}>
-                <td style={{ padding:"10px 12px", fontSize:13,color:C.text }}>{m.logisticPartner}</td>
-                <td style={{ padding:"10px 12px", fontSize:13, fontWeight:600,color:C.text }}>{m.model}</td>
-                <td style={{ padding:"10px 12px", fontSize:12, maxWidth:200,color:C.text }}>
-                  {m.modelSpecs?.map((s,i) => (
-                    <div key={i}><b>{s.modelInfo}</b>{s.modelDetails?.map((d,j)=><div key={j} style={{paddingLeft:8,color:C.muted}}>• {d}</div>)}</div>
+              <tr key={m._id} style={{ borderBottom: `1px solid ${C.border}` }}
+                onMouseEnter={e => e.currentTarget.style.background = C.panel}
+                onMouseLeave={e => e.currentTarget.style.background = "#fff"}>
+                <td style={{ padding: "10px 12px", fontSize: 13, color: C.text }}>{m.logisticPartner}</td>
+                <td style={{ padding: "10px 12px", fontSize: 13, fontWeight: 600, color: C.text }}>{m.model}</td>
+                <td style={{ padding: "10px 12px", fontSize: 12, maxWidth: 200, color: C.text }}>
+                  {m.modelSpecs?.map((s, i) => (
+                    <div key={i}><b>{s.modelInfo}</b>{s.modelDetails?.map((d, j) => <div key={j} style={{ paddingLeft: 8, color: C.muted }}>• {d}</div>)}</div>
                   ))}
                 </td>
-                <td style={{ padding:"10px 12px", fontSize:13 ,color:C.text}}>{m.average}</td>
-                <td style={{ padding:"10px 12px", fontSize:13,color:C.text }}>{m.driverWages}</td>
-                <td style={{ padding:"10px 12px", fontSize:13,color:C.text }}>{m.vehicleRate}</td>
-                <td style={{ padding:"10px 12px", fontSize:13,color:C.text }}>{m.billingCode}</td>
-                <td style={{ padding:"10px 12px",color:C.text }}>
-                  <div style={{ display:"flex", gap:6 }}>
-                    <button onClick={()=>setEditModel(m)} style={{ ...BTN(C.yellow), padding:"5px 12px" }}>Edit</button>
-                    <button onClick={()=>{ setDelItem(m); setDelType("model"); }} style={{ ...BTN(C.red), padding:"5px 12px" }}>Delete</button>
+                <td style={{ padding: "10px 12px", fontSize: 13, color: C.text }}>{m.average}</td>
+                <td style={{ padding: "10px 12px", fontSize: 13, color: C.text }}>{m.driverWages}</td>
+                <td style={{ padding: "10px 12px", fontSize: 13, color: C.text }}>{m.vehicleRate}</td>
+                <td style={{ padding: "10px 12px", fontSize: 13, color: C.text }}>{m.billingCode}</td>
+                <td style={{ padding: "10px 12px", color: C.text }}>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button onClick={() => setEditModel(m)} style={{ ...BTN(C.yellow), padding: "5px 12px" }}>Edit</button>
+                    <button onClick={() => { setDelItem(m); setDelType("model"); }} style={{ ...BTN(C.red), padding: "5px 12px" }}>Delete</button>
                   </div>
                 </td>
               </tr>
@@ -416,42 +477,42 @@ function FMLSection() {
       </Section>
 
       {/* Toll Management */}
-      <Section title="🚦 Toll Management" style={{ marginTop:24 }}>
-        <div style={{ display:"flex", gap:10, marginBottom:16, flexWrap:"wrap" }}>
-          <input value={tollSearch} onChange={e=>setTollSearch(e.target.value)} placeholder="Enter location name..." style={{ ...INP, flex:1, minWidth:200 }} />
+      <Section title="🚦 Toll Management" style={{ marginTop: 24 }}>
+        <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
+          <input value={tollSearch} onChange={e => setTollSearch(e.target.value)} placeholder="Enter location name..." style={{ ...INP, flex: 1, minWidth: 200 }} />
           <button onClick={() => { setTollSearch(""); load(); }} style={BTN(C.blue)}>Search</button>
           <button onClick={() => setShowTollAdd(true)} style={BTN(C.blue)}>Add Toll Data</button>
           <button onClick={() => setShowModelAdd(true)} style={BTN(C.green)}>Add Model</button>
         </div>
-        <div style={{ fontSize:13, color:C.muted, marginBottom:10 }}>Toll Data Records — Showing {filteredTolls.length} records</div>
-        <table style={{ width:"100%", borderCollapse:"collapse",color:C.text }}>
+        <div style={{ fontSize: 13, color: C.muted, marginBottom: 10 }}>Toll Data Records — Showing {filteredTolls.length} records</div>
+        <table style={{ width: "100%", borderCollapse: "collapse", color: C.text }}>
           <thead>
-            <tr style={{ background:C.panel }}>
-              {["Location",...[...new Set(models.map(m=>m.model))].slice(0,4),"View All","Actions"].map(h=>(
-                <th key={h} style={{ padding:"10px 12px", textAlign:"left", fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", borderBottom:`1px solid ${C.border}` }}>{h}</th>
+            <tr style={{ background: C.panel }}>
+              {["Location", ...[...new Set(models.map(m => m.model))].slice(0, 4), "View All", "Actions"].map(h => (
+                <th key={h} style={{ padding: "10px 12px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", borderBottom: `1px solid ${C.border}` }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {filteredTolls.length === 0 ? (
-              <tr><td colSpan={7} style={{ textAlign:"center", padding:40,color:C.text }}>No toll data found.</td></tr>
+              <tr><td colSpan={7} style={{ textAlign: "center", padding: 40, color: C.text }}>No toll data found.</td></tr>
             ) : filteredTolls.map(t => {
-              const modelCols = [...new Set(models.map(m=>m.model))].slice(0,4);
+              const modelCols = [...new Set(models.map(m => m.model))].slice(0, 4);
               return (
-                <tr key={t._id} style={{ borderBottom:`1px solid ${C.border}` }}
-                  onMouseEnter={e=>e.currentTarget.style.background=C.panel}
-                  onMouseLeave={e=>e.currentTarget.style.background="#fff"}>
-                  <td style={{ padding:"10px 12px", fontSize:13, fontWeight:600 }}>{t.location}</td>
-                  {modelCols.map(m=>(
-                    <td key={m} style={{ padding:"10px 12px", fontSize:13,color:C.text }}>{t.tollData?.[m] || "-"}</td>
+                <tr key={t._id} style={{ borderBottom: `1px solid ${C.border}` }}
+                  onMouseEnter={e => e.currentTarget.style.background = C.panel}
+                  onMouseLeave={e => e.currentTarget.style.background = "#fff"}>
+                  <td style={{ padding: "10px 12px", fontSize: 13, fontWeight: 600 }}>{t.location}</td>
+                  {modelCols.map(m => (
+                    <td key={m} style={{ padding: "10px 12px", fontSize: 13, color: C.text }}>{t.tollData?.[m] || "-"}</td>
                   ))}
-                  <td style={{ padding:"10px 12px",color:C.text }}>
-                    <button onClick={()=>setEditToll(t)} style={{ background:"none", border:"none", color:C.blue, cursor:"pointer", fontSize:13, textDecoration:"underline" }}>View Complete Data</button>
+                  <td style={{ padding: "10px 12px", color: C.text }}>
+                    <button onClick={() => setEditToll(t)} style={{ background: "none", border: "none", color: C.blue, cursor: "pointer", fontSize: 13, textDecoration: "underline" }}>View Complete Data</button>
                   </td>
-                  <td style={{ padding:"10px 12px",color:C.text }}>
-                    <div style={{ display:"flex", gap:6 }}>
-                      <button onClick={()=>setEditToll(t)} style={{ ...BTN(C.yellow), padding:"5px 12px" }}>Edit</button>
-                      <button onClick={()=>{ setDelItem(t); setDelType("toll"); }} style={{ ...BTN(C.red), padding:"5px 12px" }}>Delete</button>
+                  <td style={{ padding: "10px 12px", color: C.text }}>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button onClick={() => setEditToll(t)} style={{ ...BTN(C.yellow), padding: "5px 12px" }}>Edit</button>
+                      <button onClick={() => { setDelItem(t); setDelType("toll"); }} style={{ ...BTN(C.red), padding: "5px 12px" }}>Delete</button>
                     </div>
                   </td>
                 </tr>
@@ -462,13 +523,31 @@ function FMLSection() {
       </Section>
 
       {/* Modals */}
-      {showAdd && <FMLForm onClose={()=>setShowAdd(false)} onSaved={load} />}
-      {editItem && <FMLForm item={editItem} onClose={()=>setEditItem(null)} onSaved={load} />}
-      {showModelAdd && <ModelForm partner="FML" onClose={()=>setShowModelAdd(false)} onSaved={load} />}
-      {editModel && <ModelForm item={editModel} partner="FML" onClose={()=>setEditModel(null)} onSaved={load} />}
-      {showTollAdd && <TollForm models={models} onClose={()=>setShowTollAdd(false)} onSaved={load} />}
-      {editToll && <TollForm item={editToll} models={models} onClose={()=>setEditToll(null)} onSaved={load} />}
-      {delItem && <ConfirmDelete msg={`Delete this record? This cannot be undone.`} onConfirm={doDelete} onCancel={()=>setDelItem(null)} />}
+      {showAdd && <FMLForm onClose={() => setShowAdd(false)} onSaved={load} />}
+      {editItem && <FMLForm item={editItem} onClose={() => setEditItem(null)} onSaved={load} />}
+      {showModelAdd && <ModelForm partner="FML" onClose={() => setShowModelAdd(false)} onSaved={load} />}
+      {editModel && <ModelForm item={editModel} partner="FML" onClose={() => setEditModel(null)} onSaved={load} />}
+      
+      {showTollAdd && (
+        <TollForm 
+          models={models} 
+          locations={availableLocations} 
+          onClose={() => setShowTollAdd(false)} 
+          onSaved={load} 
+        />
+      )}
+      
+      {editToll && (
+        <TollForm 
+          item={editToll} 
+          models={models} 
+          locations={availableLocations} 
+          onClose={() => setEditToll(null)} 
+          onSaved={load} 
+        />
+      )}
+      
+      {delItem && <ConfirmDelete msg={`Delete this record? This cannot be undone.`} onConfirm={doDelete} onCancel={() => setDelItem(null)} />}
     </div>
   );
 }
@@ -766,7 +845,7 @@ function OthersSection() {
 // ─── Section wrapper ──────────────────────────────────────────────────────────
 function Section({ title, onAdd, addLabel, children, style={} }) {
   return (
-    <div style={{ background:"rgba(255,255,255,0.85)", backdropFilter:"blur(8px)", WebkitBackdropFilter:"blur(8px)", border:"1px solid rgba(255,255,255,0.7)", borderRadius:12, padding:20, boxShadow:"0 2px 16px rgba(0,0,0,0.06)", ...style }}>
+    <div style={{ background:"rgba(255,255,255,0.85)", WebkitBackdropFilter:"blur(8px)", border:"1px solid rgba(255,255,255,0.7)", borderRadius:12, padding:20, boxShadow:"0 2px 16px rgba(0,0,0,0.06)", ...style }}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14, flexWrap:"wrap", gap:10 }}>
         <h3 style={{ margin:0, fontSize:15, fontWeight:800, color:C.text }}>{title}</h3>
         {onAdd && <button onClick={onAdd} style={BTN(C.blue)}>{addLabel}</button>}
