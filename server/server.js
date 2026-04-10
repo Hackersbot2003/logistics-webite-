@@ -29,6 +29,11 @@ if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir, { recursive: true });
 const app = express();
 const server = http.createServer(app);
 
+
+// Add this to handle JSON sent from your frontend
+app.use(express.json()); 
+app.use(express.urlencoded({ extended: true }));
+
 // ── Socket.IO ─────────────────────────────────────────────────────────────────
 const io = new Server(server, {
   cors: {
@@ -38,6 +43,77 @@ const io = new Server(server, {
   pingTimeout: 60000,
   pingInterval: 25000,
 });
+
+const { buildBillingHTML } = require('./services/billingService'); // Adjust path if needed
+app.get('/test-billing', (req, res) => {
+    const mockData = {
+        // 'record' must contain the tax rates for the header logic
+        record: {
+            invoiceNo: "SAL/2026-27/001",
+            invoiceDate: "10/04/2026",
+            location: "PITHAMPUR TO MUMBAI",
+            eAckNumber: "123456789012",
+            eAckDate: "10/04/2026",
+            tollBillNo: "TOLL/2026/001",
+            billDate: "10/04/2026",
+            cgstRate: 9,   // CRITICAL: Used for taxRate calculation
+            sgstRate: 9,   // CRITICAL: Used for taxRate calculation
+            urbania: false,
+            miscRate: 500
+        },
+        // 'calc' must have these exact property names (lowercase)
+        calc: {
+            transportationBreakdown: [
+                { 
+                    model: "CRUISER (6511)", 
+                    qty: 2, 
+                    rate: 15.50, 
+                    amount: 3100.00, 
+                    billingCode: "996793" 
+                }
+            ],
+            totalQty: 2,
+            miscellaneousCharges: 500.00,
+            urbaniaIncentiveTotal: 0,
+            transportationSubTotal: 3600.00,
+            transportationCGST: 324.00,
+            transportationSGST: 324.00,
+            transportationFinalAmount: 4248.00,
+            transportationFinalAmountInWords: "Four thousand two hundred forty eight rupees only",
+            
+            tollBreakdown: [
+                { 
+                    model: "CRUISER (6511)", 
+                    qty: 2, 
+                    rate: 500.00, 
+                    amount: 1000.00 
+                }
+            ],
+            tollSubTotal: 1000.00,
+            tollCGST: 90.00,
+            tollSGST: 90.00,
+            tollFinalAmount: 1180.00,
+            tollFinalAmountInWords: "One thousand one hundred eighty rupees only"
+        },
+        overallKm: 450,
+        sheetType: 'FML' 
+    };
+
+    try {
+        const html = buildBillingHTML(mockData);
+        res.send(html);
+    } catch (error) {
+        console.error("Rendering Error:", error);
+        res.status(500).send(`
+            <div style="font-family:sans-serif; padding:20px; color:#721c24; background:#f8d7da; border:1px solid #f5c6cb;">
+                <h3>❌ Billing Render Error</h3>
+                <p>${error.message}</p>
+                <pre style="background:#fff; padding:10px;">${error.stack}</pre>
+            </div>
+        `);
+    }
+});
+
 
 // ── Security Middleware ───────────────────────────────────────────────────────
 app.use(helmet({
@@ -189,5 +265,19 @@ const start = async () => {
     logger.info(`🚀 Server running on port ${PORT} [${process.env.NODE_ENV || "development"}]`);
   });
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 start();
