@@ -277,204 +277,513 @@ function buildBillingHTML({ record, calc, overallKm, sheetType }) {
   const today = new Date().toLocaleDateString('en-GB');
 
   const css = `
-    *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    html,body{font-family:Arial,Helvetica,sans-serif;margin:0;padding:8px;font-size:10px;color:#000;background:#fff}
-    table{width:100%;border-collapse:collapse}
-    td,th{border:1px solid #000;padding:4px 5px;vertical-align:top;word-break:break-word}
-    .text-center{text-align:center} .text-right{text-align:right}
-    .bold{font-weight:bold}
-    .pb{page-break-after:always;margin:0;padding:0;border:none;height:0}
-    b,strong{font-weight:bold} p{margin:4px 0}
-    @page{size:A4 portrait;margin:1cm}
-    @media print{html,body{margin:0;padding:0;font-size:9px}.pb{page-break-after:always}button{display:none!important}}
-    @media screen{body{max-width:210mm;margin:0 auto;padding:10px;box-shadow:0 0 10px rgba(0,0,0,0.1)}}`;
+    *, *::before, *::after {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    html, body {
+      font-family: Arial, Helvetica, sans-serif;
+      margin: 0;
+      padding: 0;
+      font-size: 8.5px;
+      color: #000;
+      background: #fff;
+      line-height: 1.3;
+    }
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      max-height: 297mm;
+      overflow: hidden;
+      padding: 6mm 8mm;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+    td, th {
+      border: 1px solid #000;
+      padding: 2px 3px;
+      vertical-align: top;
+      word-break: break-word;
+      overflow: hidden;
+    }
+    .no-border td, .no-border th { border: none; }
+    .text-center { text-align: center; }
+    .text-right  { text-align: right; }
+    .bold        { font-weight: bold; }
+    .pb {
+      page-break-after: always;
+      break-after: page;
+      display: block;
+      height: 0;
+      margin: 0;
+      padding: 0;
+      border: none;
+    }
+    b, strong { font-weight: bold; }
+    p { margin: 2px 0; }
 
-  const supplierTd = `<b>${SUPPLIER.name}</b><br>${SUPPLIER.address.replace(/\n/g,'<br>')}
-    <br>GSTIN No.:- ${SUPPLIER.gstin}<br>PAN No. :- ${SUPPLIER.pan}
-    <br>STATE CODE :- ${SUPPLIER.state}<br>VENDOR CODE:- ${SUPPLIER.vendor}`;
+    /* ── Company header ───────────────────────────── */
+    .company-title {
+      font-size: 16px;
+      font-weight: bold;
+      text-align: center;
+      padding: 4px 0 2px;
+      border-bottom: none;
+    }
+    .original-copy {
+      font-size: 7.5px;
+      text-align: right;
+      padding: 1px 3px;
+      border-top: none;
+    }
+    .tax-invoice-label {
+      font-size: 9px;
+      font-weight: bold;
+      text-align: center;
+      padding: 2px;
+    }
 
-  const recipientTd = `<b>${RECIPIENT.name}</b><br>${RECIPIENT.address.replace(/\n/g,'<br>')}
-    <br>GSTIN No.: ${RECIPIENT.gstin}<br>PAN No. :- ${RECIPIENT.pan}
-    <br>CIN:- ${RECIPIENT.cin}<br>STATE CODE :- ${RECIPIENT.state}`;
+    /* ── Party info block ─────────────────────────── */
+    .party-table td {
+      font-size: 7.5px;
+      vertical-align: top;
+      padding: 3px 4px;
+      width: 33.33%;
+    }
+    .party-label {
+      font-size: 7.5px;
+      font-weight: bold;
+      text-decoration: underline;
+      display: block;
+      margin-bottom: 1px;
+    }
+    .party-name {
+      font-size: 8.5px;
+      font-weight: bold;
+    }
 
-  const headerBlock = (invNo, title) => `
+    /* ── Invoice meta row ─────────────────────────── */
+    .meta-table td {
+      font-size: 7.5px;
+      text-align: center;
+      padding: 2px 3px;
+      font-weight: bold;
+    }
+    .meta-table .meta-label {
+      font-weight: bold;
+      font-size: 7px;
+    }
+
+    /* ── Section title ────────────────────────────── */
+    .section-title {
+      font-size: 8.5px;
+      font-weight: bold;
+      text-align: center;
+      padding: 3px;
+      background: #fff;
+    }
+
+    /* ── Main items table ─────────────────────────── */
+    .items-table th {
+      font-size: 7px;
+      text-align: center;
+      padding: 2px 2px;
+      font-weight: bold;
+      background: #fff;
+      vertical-align: middle;
+    }
+    .items-table td {
+      font-size: 7.5px;
+      padding: 2px 3px;
+    }
+    .items-table .desc-cell {
+      font-size: 7.5px;
+    }
+    .items-table .num-cell {
+      text-align: right;
+    }
+    .items-table .center-cell {
+      text-align: center;
+    }
+    .total-row td {
+      font-weight: bold;
+      font-size: 8px;
+      padding: 3px;
+    }
+
+    /* ── Summary section ──────────────────────────── */
+    .summary-outer {
+      margin-top: 0;
+    }
+    .summary-left {
+      font-size: 7.5px;
+      padding: 3px 4px;
+      vertical-align: top;
+      width: 42%;
+    }
+    .summary-right {
+      font-size: 7.5px;
+      padding: 2px 4px;
+      vertical-align: top;
+      width: 58%;
+    }
+    .summary-right-table td {
+      border: none;
+      font-size: 7.5px;
+      padding: 1px 3px;
+    }
+    .summary-right-table .total-label {
+      width: 65%;
+    }
+    .summary-right-table .total-val {
+      text-align: right;
+      width: 35%;
+    }
+    .words-text {
+      font-size: 7.5px;
+      font-weight: bold;
+    }
+    .for-company {
+      font-size: 10px;
+      font-weight: bold;
+      margin-top: 4px;
+    }
+    .sign-block {
+      font-size: 7.5px;
+      margin-top: 2px;
+    }
+
+    /* ── Footer ───────────────────────────────────── */
+    .footer-table td {
+      font-size: 7px;
+      padding: 2px 4px;
+      border: 1px solid #000;
+    }
+
+    @page {
+      size: A4 portrait;
+      margin: 0;
+    }
+    @media print {
+      html, body { margin: 0; padding: 0; }
+      .page {
+        margin: 0;
+        padding: 6mm 8mm;
+        page-break-after: always;
+        break-after: page;
+      }
+      .pb { page-break-after: always; break-after: page; }
+      button { display: none !important; }
+    }
+    @media screen {
+      body { background: #e0e0e0; }
+      .page {
+        box-shadow: 0 2px 16px rgba(0,0,0,0.18);
+        margin: 16px auto;
+        background: #fff;
+      }
+    }`;
+
+  // ── Reusable party block HTML ────────────────────────────────────────────────
+  const supplierHtml = `
+    <span class="party-label">Supplier:</span>
+    <span class="party-name">${SUPPLIER.name}</span><br>
+    ${SUPPLIER.address.replace(/\n/g,'<br>')}
+    <br>GSTIN No.:- ${SUPPLIER.gstin}
+    <br>PAN No. :- ${SUPPLIER.pan}
+    <br>STATE CODE :- ${SUPPLIER.state}
+    <br>VENDOR CODE:- ${SUPPLIER.vendor}`;
+
+  const recipientHtml = `
+    <span class="party-label">Recipient:</span>
+    <span class="party-name">${RECIPIENT.name}</span><br>
+    ${RECIPIENT.address.replace(/\n/g,'<br>')}
+    <br>GSTIN No.: ${RECIPIENT.gstin}
+    <br>PAN No. :- ${RECIPIENT.pan}
+    <br>CIN :- ${RECIPIENT.cin}
+    <br>STATE CODE :- ${RECIPIENT.state}`;
+
+  const placeHtml = `
+    <span class="party-label">Place of Supply:</span>
+    <span class="party-name">${RECIPIENT.name}</span><br>
+    ${RECIPIENT.address.replace(/\n/g,'<br>')}
+    <br>GSTIN No.: ${RECIPIENT.gstin}
+    <br>PAN No. :- ${RECIPIENT.pan}
+    <br>CIN :- ${RECIPIENT.cin}
+    <br>STATE CODE :- ${RECIPIENT.state}`;
+
+  // ── Header block builder ─────────────────────────────────────────────────────
+  const buildHeader = (invoiceNo, sectionTitle) => `
     <table>
-      <tr><td colspan="4" class="text-center bold" style="font-size:16px">${SUPPLIER.name}</td></tr>
-      <tr><td colspan="4" class="text-right" style="font-size:10px">Original for Recipient / Duplicate for Supplier</td></tr>
-      <tr><td colspan="4" class="text-center bold" style="font-size:14px">${title}</td></tr>
       <tr>
-        <td><b>Supplier:</b><br>${supplierTd}</td>
-        <td><b>Recipient:</b><br>${recipientTd}</td>
-        <td><b>Place of Supply:</b><br>${recipientTd}</td>
-        <td>
-          <b>INVOICE NUMBER:</b> ${invNo}<br>
-          <b>INVOICE DATE:</b> ${record.invoiceDate||''}<br>
-          <b>E-INVOICE ACK NO:</b> ${record.eAckNumber||''}<br>
-          <b>E-INVOICE ACK DATE:</b> ${record.eAckDate||''}
-        </td>
+        <td colspan="3" class="company-title" style="border-bottom:none">SHREE AARYA LOGISTICS</td>
+      </tr>
+      <tr>
+        <td colspan="3" class="original-copy" style="border-top:none;border-bottom:none">Orignal for Receipient / Duplicate for Supplier</td>
+      </tr>
+      <tr>
+        <td colspan="3" class="tax-invoice-label">Tax Invoice</td>
+      </tr>
+    </table>
+    <table class="party-table">
+      <tr>
+        <td>${supplierHtml}</td>
+        <td>${recipientHtml}</td>
+        <td>${placeHtml}</td>
+      </tr>
+    </table>
+    <table>
+      <tr>
+        <td colspan="2" style="padding:1px 3px;font-size:7.5px">PO Number :-<br>PO Date &nbsp;&nbsp; :-</td>
+        <td style="width:18%;text-align:center;font-size:7px;font-weight:bold;vertical-align:middle">INVOICE NUMBER</td>
+        <td style="width:16%;text-align:center;font-size:7px;font-weight:bold;vertical-align:middle">INVOICE DATE</td>
+        <td style="width:18%;text-align:center;font-size:7px;font-weight:bold;vertical-align:middle">E-INVOICE ACK NO:</td>
+        <td style="width:18%;text-align:center;font-size:7px;font-weight:bold;vertical-align:middle">E-INVOICE ACK DATE:</td>
+      </tr>
+      <tr>
+        <td colspan="2" style="font-size:7.5px;padding:1px 3px">&nbsp;</td>
+        <td style="text-align:center;font-size:8px;font-weight:bold">${invoiceNo||''}</td>
+        <td style="text-align:center;font-size:7.5px">${record.invoiceDate||''}</td>
+        <td style="text-align:center;font-size:7.5px">${record.eAckNumber||''}</td>
+        <td style="text-align:center;font-size:7.5px">${record.eAckDate||''}</td>
+      </tr>
+    </table>
+    <table>
+      <tr>
+        <td colspan="10" class="section-title">${sectionTitle}</td>
       </tr>
     </table>`;
 
-  const tableHead = `
-    <table>
+  // ── Items table header ───────────────────────────────────────────────────────
+  const itemsTableHead = `
+    <table class="items-table">
       <thead>
         <tr>
-          <th rowspan="2" class="text-center">Sr. No.</th>
-          <th rowspan="2" class="text-center">Description of Service</th>
-          <th rowspan="2" class="text-center">HSN / SAC Code</th>
-          <th colspan="3" class="text-center">Quantity UOM Unit Rate (Rs.Ps)</th>
-          <th rowspan="2" class="text-center">Taxable Amount (Rs.Ps)</th>
-          <th rowspan="2" class="text-center">Tax Rate %</th>
-          <th rowspan="2" class="text-center">Total Tax Amount (Rs.Ps)</th>
-          <th rowspan="2" class="text-center">Total (Rs.Ps)</th>
+          <th rowspan="2" style="width:4%">Sr. No.</th>
+          <th rowspan="2" style="width:22%">Description of Service</th>
+          <th rowspan="2" style="width:8%">HSN / SAC Code</th>
+          <th colspan="3" class="text-center" style="width:21%">Quantity UOM Unit Rate (Rs.Ps)</th>
+          <th rowspan="2" style="width:12%">Taxable Amount (Rs.Ps)</th>
+          <th rowspan="2" style="width:8%">Tax Rate %</th>
+          <th rowspan="2" style="width:11%">Total Tax Amount (Rs.Ps)</th>
+          <th rowspan="2" style="width:12%">Total (Rs.Ps)</th>
         </tr>
         <tr>
-          <th class="text-center">KM</th>
-          <th class="text-center">Qty</th>
-          <th class="text-center">Rate</th>
+          <th style="width:7%">KM</th>
+          <th style="width:7%">Qty</th>
+          <th style="width:7%">Rate</th>
         </tr>
-      </thead><tbody>`;
+      </thead>
+      <tbody>`;
 
-  // ── Transportation page ────────────────────────────────────────────────────
+  // ── Summary right panel builder ──────────────────────────────────────────────
+  const buildSummaryRight = (net, cgstAmt, sgstAmt, total, billNoRef) => `
+    <table class="summary-right-table" style="width:100%">
+      <tr><td class="total-label bold">Total Net Value Rs :</td><td class="total-val">${net.toFixed(2)}</td></tr>
+      <tr><td class="total-label">Total CGST Value Rs :</td><td class="total-val">${cgstAmt.toFixed(2)}&nbsp;(${cR} %)</td></tr>
+      <tr><td class="total-label">Total SGST Value Rs :</td><td class="total-val">${sgstAmt.toFixed(2)}&nbsp;(${sR} %)</td></tr>
+      <tr><td class="total-label">Total IGST Value Rs :</td><td class="total-val">-</td></tr>
+      <tr><td class="total-label">Total Tax Value Rs :</td><td class="total-val">${(cgstAmt+sgstAmt).toFixed(2)}</td></tr>
+      <tr><td class="total-label bold">Total Invoice Value Rs :</td><td class="total-val bold">${total.toFixed(2)}</td></tr>
+      <tr><td colspan="2">Whether Reverse Charge Applicable (Y / N) : <b>No</b></td></tr>
+    </table>
+    <p class="for-company">FOR SHREE AARYA LOGISTICS</p>
+    <div class="sign-block">
+      <br>
+      <b>AUTHORISED SIGNATORY</b><br>
+      DATE : ${today}<br>
+      PLACE : PITHAMPUR
+    </div>`;
+
+  // ════════════════════════════════════════════════════════════════
+  // TRANSPORTATION PAGE
+  // ════════════════════════════════════════════════════════════════
   let transRows = '';
   calc.transportationBreakdown.forEach((row, i) => {
     const tax = row.amount * taxRate / 100;
-     transRows += `<tr>
-       <td class="text-center">${i+1}</td>
-       <td>DESCRIPTION-${row.model}<br><b>BILLING CODE: ${row.billingCode||'—'}</b><br>INVOICE & CHASSIS NO AS PER ANNEXTURE</td>
-       <td class="text-center">996793</td>
-       <td class="text-right">${overallKm}</td>
-       <td class="text-right">${row.qty}</td>
-       <td class="text-right">${(Number(row.rate)||0).toFixed(2)}</td>
-       <td class="text-right">${(Number(row.amount)||0).toFixed(2)}</td>
-       <td class="text-right">${taxRate} %</td>
-       <td class="text-right">${(Number(tax)||0).toFixed(2)}</td>
-       <td class="text-right">${(Number(row.amount+tax)||0).toFixed(2)}</td>
-     </tr>`;
+    transRows += `
+      <tr>
+        <td class="center-cell">${i+1}</td>
+        <td class="desc-cell">DESCRIPTION-${row.model} (${row.billingCode||'—'})<br>INVOICE &amp; CHASSIS NO AS PER ANNEXTURE</td>
+        <td class="center-cell">996793</td>
+        <td class="num-cell">${overallKm}</td>
+        <td class="num-cell">${row.qty}</td>
+        <td class="num-cell">${(Number(row.rate)||0).toFixed(2)}</td>
+        <td class="num-cell">${(Number(row.amount)||0).toFixed(2)}</td>
+        <td class="center-cell">${taxRate} %</td>
+        <td class="num-cell">${(Number(tax)||0).toFixed(2)}</td>
+        <td class="num-cell">${(Number(row.amount+tax)||0).toFixed(2)}</td>
+      </tr>`;
   });
+
   if (record.urbania) {
     const uAmt = calc.urbaniaIncentiveTotal;
     const uTax = uAmt * taxRate / 100;
-    transRows += `<tr>
-      <td></td>
-      <td>SPECIAL INCENTIVE FOR URBANIA</td>
-      <td class="text-center">996793</td>
-      <td class="text-right">${overallKm}</td>
-      <td class="text-right">${calc.totalQty}</td>
-      <td class="text-right">${record.urbaniaIncentive||1000}</td>
-      <td class="text-right">${uAmt.toFixed(2)}</td>
-      <td class="text-right">${taxRate} %</td>
-      <td class="text-right">${uTax.toFixed(2)}</td>
-      <td class="text-right">${(uAmt+uTax).toFixed(2)}</td>
-    </tr>`;
+    transRows += `
+      <tr>
+        <td class="center-cell"></td>
+        <td class="desc-cell">SPECIAL INCENTIVE FOR URBANIA</td>
+        <td class="center-cell">996793</td>
+        <td class="num-cell">${overallKm}</td>
+        <td class="num-cell">${calc.totalQty}</td>
+        <td class="num-cell">${record.urbaniaIncentive||1000}</td>
+        <td class="num-cell">${uAmt.toFixed(2)}</td>
+        <td class="center-cell">${taxRate} %</td>
+        <td class="num-cell">${uTax.toFixed(2)}</td>
+        <td class="num-cell">${(uAmt+uTax).toFixed(2)}</td>
+      </tr>`;
   }
+
   const mAmt = calc.miscellaneousCharges;
   const mTax = mAmt * taxRate / 100;
-  transRows += `<tr>
-    <td></td>
-    <td>MISCELLANEOUS CHARGES<br>INVOICE &amp; CHASSIS NO AS PER ANNEXTURE</td>
-    <td class="text-center">996793</td>
-    <td class="text-right">${overallKm}</td>
-    <td class="text-right">${calc.totalQty}</td>
-    <td class="text-right">${record.miscRate||500}</td>
-    <td class="text-right">${mAmt.toFixed(2)}</td>
-    <td class="text-right">${taxRate} %</td>
-    <td class="text-right">${mTax.toFixed(2)}</td>
-    <td class="text-right">${(mAmt+mTax).toFixed(2)}</td>
-  </tr>`;
+  transRows += `
+    <tr>
+      <td class="center-cell"></td>
+      <td class="desc-cell">MISCELLANEOUS CHARGES<br>INVOICE &amp; CHASSIS NO AS PER ANNEXTURE</td>
+      <td class="center-cell">996793</td>
+      <td class="num-cell">${overallKm}</td>
+      <td class="num-cell">${calc.totalQty}</td>
+      <td class="num-cell">${record.miscRate||500}</td>
+      <td class="num-cell">${mAmt.toFixed(2)}</td>
+      <td class="center-cell">${taxRate} %</td>
+      <td class="num-cell">${mTax.toFixed(2)}</td>
+      <td class="num-cell">${(mAmt+mTax).toFixed(2)}</td>
+    </tr>`;
+
   const tNet = calc.transportationSubTotal;
   const tTax = calc.transportationCGST + calc.transportationSGST;
-  transRows += `<tr class="bold">
-    <td colspan="6" class="text-right">TOTAL NET VALUE:</td>
-    <td class="text-right">${tNet.toFixed(2)}</td>
-    <td></td>
-    <td class="text-right">${tTax.toFixed(2)}</td>
-    <td class="text-right">${calc.transportationFinalAmount.toFixed(2)}</td>
-  </tr>`;
-
-  const transSummaryLeft = `
-    <p>PITHAMPUR TO :- <b>${record.location}</b></p>
-    <p>Invoice Value Rs. (In Words):<br><b>${calc.transportationFinalAmountInWords.toUpperCase()}</b></p>
-    <p>Electronic Reference Number :<br><br></p>
-    <p class="bold">NOTIFICATION NO - AS PER GST TARIFF</p>
-    <p>Certified that the particulars given above are true and correct.</p>
-    <p class="bold text-center">EXPENSE REIMBURSEMENT TOLL &amp; TAX BILL NO ${record.tollBillNo}</p>`;
-
-  const summaryRight = (net, cgstAmt, sgstAmt, total) => `
-    <table style="border:none">
-      <tr class="bold"><td>Total Net Value Rs :</td><td class="text-right">${net.toFixed(2)}</td></tr>
-      <tr><td>Total CGST Value Rs :</td><td class="text-right">${cgstAmt.toFixed(2)} (${cR} %)</td></tr>
-      <tr><td>Total SGST Value Rs :</td><td class="text-right">${sgstAmt.toFixed(2)} (${sR} %)</td></tr>
-      <tr><td>Total IGST Value Rs :</td><td class="text-right">-</td></tr>
-      <tr><td>Total Tax Value Rs :</td><td class="text-right">${(cgstAmt+sgstAmt).toFixed(2)}</td></tr>
-      <tr class="bold"><td>Total Invoice Value Rs :</td><td class="text-right">${total.toFixed(2)}</td></tr>
-      <tr><td colspan="2">Whether Reverse Charge Applicable (Y / N) : <b>No</b></td></tr>
-    </table>
-    <p class="bold" style="font-size:12px">FOR SHREE AARYA LOGISTICS</p>
-    <p><br><br><b>AUTHORISED SIGNATORY</b><br>DATE : ${today}<br>PLACE : PITHAMPUR</p>`;
+  transRows += `
+    <tr class="total-row">
+      <td colspan="6" class="text-right">TOTAL NET VALUE:</td>
+      <td class="num-cell">${tNet.toFixed(2)}</td>
+      <td></td>
+      <td class="num-cell">${tTax.toFixed(2)}</td>
+      <td class="num-cell">${calc.transportationFinalAmount.toFixed(2)}</td>
+    </tr>`;
 
   const transPage = `
-    ${headerBlock(record.invoiceNo, 'Tax Invoice')}
-    ${tableHead}${transRows}</tbody></table>
-    <table style="border:none"><tr>
-      <td style="width:40%;vertical-align:top">${transSummaryLeft}</td>
-      <td style="width:60%;vertical-align:top">${summaryRight(tNet, calc.transportationCGST, calc.transportationSGST, calc.transportationFinalAmount)}</td>
-    </tr></table>
-    <table><tr><td style="font-size:10px"><b>Regd. Office :</b> ________________________________</td></tr></table>`;
+    <div class="page">
+      ${buildHeader(record.invoiceNo, 'TRANSPORTATION')}
+      ${itemsTableHead}${transRows}</tbody>
+    </table>
+    <table class="summary-outer" style="border-top:none">
+      <tr>
+        <td class="summary-left">
+          <p>PITHAMPUR TO :- <b>${record.location||''}</b></p>
+          <p>Invoice Value Rs. (In Words) :-</p>
+          <p class="words-text">${calc.transportationFinalAmountInWords.toUpperCase()}</p>
+          <p style="margin-top:4px">Electronic Reference Number :</p>
+          <p style="margin-bottom:6px">&nbsp;</p>
+          <p class="bold">NOTIFICATION NO - AS PER GST TARIFF</p>
+          <p style="margin-top:4px">Certified that the particulars given above are true and correct.</p>
+          <p class="bold text-center" style="margin-top:6px">EXPENSE REIMBURSEMENT TOLL &amp; TAX BILL NO ${record.tollBillNo||''}</p>
+        </td>
+        <td class="summary-right">
+          ${buildSummaryRight(tNet, calc.transportationCGST, calc.transportationSGST, calc.transportationFinalAmount, record.tollBillNo)}
+        </td>
+      </tr>
+    </table>
+    <table class="footer-table" style="margin-top:2px">
+      <tr><td><b>Regd. Office :</b> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td></tr>
+    </table>
+    </div>`;
 
-  // EXP-FML: transport only
+  // EXP-FML: transport page only
   if (sheetType === 'FML_EXP') {
-    return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${css}</style></head><body>${transPage}<script>window.onload=function(){document.title="Bill_${record.billNoPair}";}</script></body></html>`;
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Bill_${record.billNoPair}</title>
+  <style>${css}</style>
+</head>
+<body>
+  ${transPage}
+  <script>window.onload=function(){document.title="Bill_${record.billNoPair}";};</script>
+</body>
+</html>`;
   }
 
-  // ── Toll page (FML only) ───────────────────────────────────────────────────
+  // ════════════════════════════════════════════════════════════════
+  // TOLL PAGE (FML only)
+  // ════════════════════════════════════════════════════════════════
   let tollRows = '';
   calc.tollBreakdown.forEach((row, i) => {
     const tax = row.amount * taxRate / 100;
-    tollRows += `<tr>
-      <td class="text-center">${i+1}</td>
-      <td>Toll & Tax for ${row.model}</td>
-      <td class="text-center">996793</td>
-      <td class="text-right">${overallKm}</td>
-      <td class="text-right">${row.qty}</td>
-      <td class="text-right">${(Number(row.rate)||0).toFixed(2)}</td>
-      <td class="text-right">${(Number(row.amount)||0).toFixed(2)}</td>
-      <td class="text-right">${taxRate} %</td>
-      <td class="text-right">${(Number(tax)||0).toFixed(2)}</td>
-      <td class="text-right">${(Number(row.amount+tax)||0).toFixed(2)}</td>
-    </tr>`;
+    tollRows += `
+      <tr>
+        <td class="center-cell">${i+1}</td>
+        <td class="desc-cell">DESCRIPTION-${row.model}<br>INVOICE &amp; CHASSIS NO AS PER ANNEXTURE</td>
+        <td class="center-cell">996793</td>
+        <td class="num-cell">${overallKm}</td>
+        <td class="num-cell">${row.qty}</td>
+        <td class="num-cell">${(Number(row.rate)||0).toFixed(2)}</td>
+        <td class="num-cell">${(Number(row.amount)||0).toFixed(2)}</td>
+        <td class="center-cell">${taxRate} %</td>
+        <td class="num-cell">${(Number(tax)||0).toFixed(2)}</td>
+        <td class="num-cell">${(Number(row.amount+tax)||0).toFixed(2)}</td>
+      </tr>`;
   });
-  const tn2 = calc.tollSubTotal, tt2 = calc.tollCGST+calc.tollSGST;
-  tollRows += `<tr class="bold">
-    <td colspan="6" class="text-right">TOTAL NET VALUE:</td>
-    <td class="text-right">${tn2.toFixed(2)}</td>
-    <td></td>
-    <td class="text-right">${tt2.toFixed(2)}</td>
-    <td class="text-right">${calc.tollFinalAmount.toFixed(2)}</td>
-  </tr>`;
+
+  const tn2 = calc.tollSubTotal, tt2 = calc.tollCGST + calc.tollSGST;
+  tollRows += `
+    <tr class="total-row">
+      <td colspan="6" class="text-right">TOTAL NET VALUE:</td>
+      <td class="num-cell">${tn2.toFixed(2)}</td>
+      <td></td>
+      <td class="num-cell">${tt2.toFixed(2)}</td>
+      <td class="num-cell">${calc.tollFinalAmount.toFixed(2)}</td>
+    </tr>`;
 
   const tollPage = `
-    ${headerBlock(record.tollBillNo, 'EXPENSE REIMBURSEMENT TOLL &amp; TAX BILL')}
-    ${tableHead}${tollRows}</tbody></table>
-    <table style="border:none"><tr>
-      <td style="width:40%;vertical-align:top">
-        <p>PITHAMPUR TO :- <b>${record.location}</b></p>
-        <p>Invoice Value Rs. (In Words):<br><b>${calc.tollFinalAmountInWords.toUpperCase()}</b></p>
-        <p>Electronic Reference Number :<br><br></p>
-        <p class="bold">NOTIFICATION NO - AS PER GST TARIFF</p>
-        <p>Certified that the particulars given above are true and correct.</p>
-        <p class="bold text-center">EXPENSE REIMBURSEMENT TOLL &amp; TAX BILL NO ${record.invoiceNo}</p>
-      </td>
-      <td style="width:60%;vertical-align:top">${summaryRight(tn2, calc.tollCGST, calc.tollSGST, calc.tollFinalAmount)}</td>
-    </tr></table>
-    <table><tr><td style="font-size:10px"><b>Regd. Office :</b> ________________________________</td></tr></table>`;
+    <div class="page">
+      ${buildHeader(record.tollBillNo, 'EXP REIMBURSEMENT TOLL &amp; TAX')}
+      ${itemsTableHead}${tollRows}</tbody>
+    </table>
+    <table class="summary-outer" style="border-top:none">
+      <tr>
+        <td class="summary-left">
+          <p>PITHAMPUR TO :- <b>${record.location||''}</b></p>
+          <p>Invoice Value Rs. (In Words) :-</p>
+          <p class="words-text">${calc.tollFinalAmountInWords.toUpperCase()}</p>
+          <p style="margin-top:4px">Electronic Reference Number :</p>
+          <p style="margin-bottom:6px">&nbsp;</p>
+          <p class="bold">NOTIFICATION NO - AS PER GST TARIFF</p>
+          <p style="margin-top:4px">Certified that the particulars given above are true and correct.</p>
+          <p class="bold text-center" style="margin-top:6px">TRANSPORTATION BILL NO<br>${record.invoiceNo||''}</p>
+        </td>
+        <td class="summary-right">
+          ${buildSummaryRight(tn2, calc.tollCGST, calc.tollSGST, calc.tollFinalAmount, record.invoiceNo)}
+        </td>
+      </tr>
+    </table>
+    <table class="footer-table" style="margin-top:2px">
+      <tr><td><b>Regd. Office :</b> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td></tr>
+    </table>
+    </div>`;
 
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${css}</style></head><body>
-    ${transPage}
-    <div class="pb"></div>
-    ${tollPage}
-    <script>window.onload=function(){document.title="Bill_${record.billNoPair}";}</script>
-  </body></html>`;
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Bill_${record.billNoPair}</title>
+  <style>${css}</style>
+</head>
+<body>
+  ${transPage}
+  ${tollPage}
+  <script>window.onload=function(){document.title="Bill_${record.billNoPair}";};</script>
+</body>
+</html>`;
 }
 
 module.exports = {
