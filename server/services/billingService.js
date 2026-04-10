@@ -30,6 +30,7 @@ const CUSTOM_HEADERS = [
   "deliveryDate","pdiStatus","taxPaymentReceipt","billed",
 ];
 
+
 // ─── Company data ──────────────────────────────────────────────────────────────
 const SUPPLIER = {
   name: 'SHREE AARYA LOGISTICS',
@@ -799,16 +800,10 @@ async function generatePDFBuffer(htmlContent) {
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
+        '--disable-gpu',
         '--no-first-run',
         '--no-zygote',
-        '--disable-gpu',
-        '--disable-web-security',
-        '--disable-features=VizDisplayCompositor',
-        '--disable-logging',
-        '--disable-background-timer-throttling',
-        '--disable-renderer-backgrounding',
-        '--enable-features=NetworkService',
+        '--single-process'
       ],
     });
     console.log('Browser launched successfully');
