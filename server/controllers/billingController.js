@@ -8,6 +8,7 @@ const Toll               = require('../models/Toll');
 const { getSheetsClient } = require('../config/google');
 const logger             = require('../config/logger');
 const { uploadFileToDrive } = require('../services/driveService');
+const { htmlToPdfBuffer } = require('../utils/pdfGenerator');
 const {
   CUSTOM_HEADERS, performCalculations, buildVehicleRow,
   buildBillingHTML, ensureBillingTab, appendVehicleRows, markVehiclesBilledInSheet,
@@ -352,10 +353,10 @@ exports.generateBill = async (req, res) => {
       try {
         const { buildBillingHTML } = require('../services/billingService');
         const html = buildBillingHTML({ record: populatedRecord, calc, overallKm, sheetType });
-        // Convert HTML string to Buffer and upload as HTML file (opens in browser like PDF)
-        const htmlBuffer = Buffer.from(html, 'utf-8');
-        const filename = `BILL_${billNoPair}_${consigneeName}_${location}.html`;
-        const driveFile = await uploadFileToDrive(htmlBuffer, filename, 'text/html', 'Billing_PDFs');
+        // Convert HTML string to PDF buffer using shared utility
+        const pdfBuffer = await htmlToPdfBuffer(html);
+        const filename = `BILL_${billNoPair}_${consigneeName}_${location}.pdf`;
+        const driveFile = await uploadFileToDrive(pdfBuffer, filename, 'application/pdf', 'Billing_PDFs');
         await BillingRecord.findByIdAndUpdate(record._id, {
           driveFileId: driveFile.id,
           driveViewLink: driveFile.webViewLink || driveFile.webContentLink,
@@ -373,7 +374,7 @@ exports.generateBill = async (req, res) => {
   }
 };
 
-// ── GET /api/billing/pdf/:id — FIX: fetch via api with token, return HTML ─────
+// ── GET /api/billing/pdf/:id — Return PDF buffer ──────────────────────────────
 exports.generatePDF = async (req, res) => {
   try {
     const record = await BillingRecord.findById(req.params.id).populate('vehicles').lean();
@@ -400,14 +401,16 @@ exports.generatePDF = async (req, res) => {
     });
 
     const html = buildBillingHTML({ record, calc, overallKm, sheetType: record.sheetType });
-    // Add print button and auto-print script
-    const finalHtml = html.replace('</body>', `
-      <button onclick="window.print()" style="position:fixed;top:12px;right:18px;background:#2563EB;color:#fff;border:none;padding:8px 22px;font-size:13px;font-weight:700;border-radius:6px;cursor:pointer;z-index:999;box-shadow:0 2px 8px rgba(0,0,0,0.2)">🖨️ Print / Save PDF</button>
-      <style>@media print{button{display:none!important}}</style>
-      </body>`);
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.send(finalHtml);
-  } catch (err) { res.status(500).json({ message: err.message }); }
+    
+    // Convert HTML to PDF buffer and send as PDF
+    const pdfBuffer = await htmlToPdfBuffer(html);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="BILL_${record.billNoPair}.pdf"`);
+    res.send(pdfBuffer);
+  } catch (err) { 
+    logger.error('generatePDF error:', err.message);
+    res.status(500).json({ message: err.message }); 
+  }
 };
 
 // ══════════════════════════════════════════════════════════════════════════════

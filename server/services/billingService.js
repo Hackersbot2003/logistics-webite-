@@ -339,18 +339,18 @@ function buildBillingHTML({ record, calc, overallKm, sheetType }) {
   let transRows = '';
   calc.transportationBreakdown.forEach((row, i) => {
     const tax = row.amount * taxRate / 100;
-    transRows += `<tr>
-      <td class="text-center">${i+1}</td>
-      <td>DESCRIPTION-${row.model}<br><b>BILLING CODE: ${row.billingCode||'—'}</b><br>INVOICE &amp; CHASSIS NO AS PER ANNEXTURE</td>
-      <td class="text-center">996793</td>
-      <td class="text-right">${overallKm}</td>
-      <td class="text-right">${row.qty}</td>
-      <td class="text-right">${(row.rate||0).toFixed(2)}</td>
-      <td class="text-right">${row.amount.toFixed(2)}</td>
-      <td class="text-right">${taxRate} %</td>
-      <td class="text-right">${tax.toFixed(2)}</td>
-      <td class="text-right">${(row.amount+tax).toFixed(2)}</td>
-    </tr>`;
+     transRows += `<tr>
+       <td class="text-center">${i+1}</td>
+       <td>DESCRIPTION-${row.model}<br><b>BILLING CODE: ${row.billingCode||'—'}</b><br>INVOICE & CHASSIS NO AS PER ANNEXTURE</td>
+       <td class="text-center">996793</td>
+       <td class="text-right">${overallKm}</td>
+       <td class="text-right">${row.qty}</td>
+       <td class="text-right">${(Number(row.rate)||0).toFixed(2)}</td>
+       <td class="text-right">${(Number(row.amount)||0).toFixed(2)}</td>
+       <td class="text-right">${taxRate} %</td>
+       <td class="text-right">${(Number(tax)||0).toFixed(2)}</td>
+       <td class="text-right">${(Number(row.amount+tax)||0).toFixed(2)}</td>
+     </tr>`;
   });
   if (record.urbania) {
     const uAmt = calc.urbaniaIncentiveTotal;
@@ -433,15 +433,15 @@ function buildBillingHTML({ record, calc, overallKm, sheetType }) {
     const tax = row.amount * taxRate / 100;
     tollRows += `<tr>
       <td class="text-center">${i+1}</td>
-      <td>Toll &amp; Tax for ${row.model}</td>
+      <td>Toll & Tax for ${row.model}</td>
       <td class="text-center">996793</td>
       <td class="text-right">${overallKm}</td>
       <td class="text-right">${row.qty}</td>
-      <td class="text-right">${(row.rate||0).toFixed(2)}</td>
-      <td class="text-right">${row.amount.toFixed(2)}</td>
+      <td class="text-right">${(Number(row.rate)||0).toFixed(2)}</td>
+      <td class="text-right">${(Number(row.amount)||0).toFixed(2)}</td>
       <td class="text-right">${taxRate} %</td>
-      <td class="text-right">${tax.toFixed(2)}</td>
-      <td class="text-right">${(row.amount+tax).toFixed(2)}</td>
+      <td class="text-right">${(Number(tax)||0).toFixed(2)}</td>
+      <td class="text-right">${(Number(row.amount+tax)||0).toFixed(2)}</td>
     </tr>`;
   });
   const tn2 = calc.tollSubTotal, tt2 = calc.tollCGST+calc.tollSGST;

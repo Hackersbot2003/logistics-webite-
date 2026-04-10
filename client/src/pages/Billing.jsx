@@ -22,7 +22,7 @@ function Spin({dark,sm}){
   return<div style={{width:s,height:s,border:`2px solid ${dark?"rgba(0,0,0,0.1)":"rgba(255,255,255,0.3)"}`,borderTopColor:dark?C.blue:"#fff",borderRadius:"50%",animation:"bspin 0.7s linear infinite",display:"inline-block"}} />;
 }
 
-// Open PDF — window opened synchronously (avoids popup blocker), then HTML written in
+// Open PDF — window opened synchronously (avoids popup blocker), then PDF fetched and displayed
 function openPDF(path) {
   const token = localStorage.getItem("ds_token");
   // Open blank window synchronously from click event — won't be blocked
@@ -38,12 +38,12 @@ function openPDF(path) {
     <body><div style="text-align:center"><div class="spinner"></div>
     <p style="color:#64748B;margin-top:16px">Loading PDF…</p></div></body></html>`);
   w.document.close();
-  // Fetch HTML with auth token
-  api.get(path, { responseType: "text" })
+  // Fetch PDF with auth token and create object URL
+  api.get(path, { responseType: "blob" })
     .then(({ data }) => {
-      w.document.open();
-      w.document.write(data);
-      w.document.close();
+      const blob = new Blob([data], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      w.location.href = url;
     })
     .catch(err => {
       const msg = typeof err?.response?.data === "string"
