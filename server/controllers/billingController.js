@@ -12,7 +12,7 @@ const { htmlToPdfBuffer } = require('../utils/pdfGenerator');
 const {
   CUSTOM_HEADERS, performCalculations, buildVehicleRow,
   buildBillingHTML, ensureBillingTab, appendVehicleRows, markVehiclesBilledInSheet,
-  numberToWords,
+  numberToWords, generatePDFBuffer, uploadToDrive,
 } = require('../services/billingService');
 
 const n = v => parseFloat(v) || 0;
@@ -351,18 +351,21 @@ exports.generateBill = async (req, res) => {
     // Upload bill HTML as PDF to Google Drive (fire-and-forget — does not block response)
     (async () => {
       try {
-        const { buildBillingHTML } = require('../services/billingService');
-        const html = buildBillingHTML({ record: populatedRecord, calc, overallKm, sheetType });
-        // Convert HTML string to PDF buffer using shared utility
-        const pdfBuffer = await htmlToPdfBuffer(html);
-        const filename = `BILL_${billNoPair}_${consigneeName}_${location}.pdf`;
-        const driveFile = await uploadFileToDrive(pdfBuffer, filename, 'application/pdf', 'Billing_PDFs');
-        await BillingRecord.findByIdAndUpdate(record._id, {
-          driveFileId: driveFile.id,
-          driveViewLink: driveFile.webViewLink || driveFile.webContentLink,
-        });
-        logger.info(`Billing PDF uploaded to Drive: ${driveFile.id}`);
+    const { buildBillingHTML } = require('../services/billingService');
+    const html = buildBillingHTML({ record: populatedRecord, calc, overallKm, sheetType });
+    // Convert HTML string to PDF buffer using the new generatePDFBuffer function
+    const pdfBuffer = await generatePDFBuffer(html);
+    const filename = `BILL_${billNoPair}_${consigneeName}_${location}.pdf`;
+    // Upload to Google Drive using the new uploadToDrive function
+    const driveFile = await uploadToDrive(pdfBuffer, filename, process.env.GOOGLE_DRIVE_BILLING_FOLDER_ID || 'root');
+    await BillingRecord.findByIdAndUpdate(record._id, {
+      driveFileId: driveFile.id,
+      driveViewLink: driveFile.webViewLink || driveFile.webContentLink,
+    });
+    logger.info(`Billing PDF uploaded to Drive: ${driveFile.id}`);
       } catch (e) {
+        console.error('Drive upload for billing failed:', e.message);
+        console.error('Error stack:', e.stack);
         logger.warn(`Drive upload for billing failed: ${e.message}`);
       }
     })();
@@ -401,9 +404,8 @@ exports.generatePDF = async (req, res) => {
     });
 
     const html = buildBillingHTML({ record, calc, overallKm, sheetType: record.sheetType });
-    
-    // Convert HTML to PDF buffer and send as PDF
-    const pdfBuffer = await htmlToPdfBuffer(html);
+    // Convert HTML to PDF buffer using the new generatePDFBuffer function
+    const pdfBuffer = await generatePDFBuffer(html);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="BILL_${record.billNoPair}.pdf"`);
     res.send(pdfBuffer);
@@ -451,20 +453,24 @@ exports.deleteBillRecord = async (req, res) => {
 
 exports.generateAnnexurePDF = async (req, res) => {
   try {
+    console.log('Starting annexure PDF generation for bill:', req.query.billNo);
     const { vehicleSheetName, billNo } = req.query;
     if (!vehicleSheetName || !billNo) return res.status(400).json({ message: 'vehicleSheetName and billNo required' });
     const num = parseInt(billNo, 10);
     if (isNaN(num)) return res.status(400).json({ message: 'billNo must be a number' });
 
+    console.log('Looking for billing record with sheet:', vehicleSheetName, 'and bill no:', num);
     const record = await BillingRecord.findOne({
       vehicleSheetName,
       $or: [{ invoiceNo: num }, { tollBillNo: num }],
     }).lean();
     if (!record) return res.status(404).json({ message: `No bill found for bill no ${billNo} in sheet "${vehicleSheetName}"` });
 
+    console.log('Found billing record, fetching vehicles...');
     const vehicles = await Vehicle.find({ uniqueId: { $in: record.vehicleUniqueIds } }).lean();
     if (!vehicles.length) return res.status(404).json({ message: 'No vehicles found for this bill' });
 
+    console.log('Vehicles fetched, generating HTML for', vehicles.length, 'vehicles');
     const consigneeName   = vehicles[0].consigneeName || '';
     const placeOfDelivery = vehicles[0].placeOfDelivery || '';
 
@@ -480,47 +486,61 @@ exports.generateAnnexurePDF = async (req, res) => {
         <td>${v.deliveryDate || ''}</td>
       </tr>`).join('');
 
-    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Annexure - ${billNo}</title>
-<style>
-  *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:Arial,sans-serif;font-size:9pt;background:#fff;color:#000}
-  .page{width:277mm;margin:0 auto;padding:8mm 10mm}
-  .co-name{font-size:13pt;font-weight:bold;text-align:center}
-  .co-addr{font-size:8pt;text-align:center;margin-top:1px}
-  .info-bar{display:flex;justify-content:space-between;border:1px solid #000;padding:3px 6px;font-size:9pt;font-weight:bold;margin:5px 0 0}
-  table{width:100%;border-collapse:collapse;margin-top:0}
-  th{border:1px solid #000;padding:4px 3px;background:#e8e8e8;font-size:8pt;font-weight:bold;text-align:center;line-height:1.2}
-  td{border:1px solid #000;padding:3px 3px;font-size:8pt;text-align:center}
-  .total{text-align:right;font-size:9pt;font-weight:bold;margin-top:4px}
-  .print-btn{position:fixed;top:12px;right:18px;background:#2563EB;color:#fff;border:none;padding:8px 22px;font-size:13px;font-weight:700;border-radius:6px;cursor:pointer;z-index:999}
-  @media print{.print-btn{display:none}@page{size:A4 landscape;margin:8mm 10mm}}
-</style></head><body>
-<button class="print-btn" onclick="window.print()">🖨️ Print / Save as PDF</button>
-<div class="page">
-  <div class="co-name">SHREE AARYA LOGISTICS</div>
-  <div class="co-addr">197-AMBIKAPURI EXTENSION. AERODROME ROAD, NEAR GANGESHWAR DHAM TEMPLE, INDORE-M.P.-452005</div>
-  <div class="info-bar">
-    <span>DEALER NAME: ${consigneeName}&nbsp;&nbsp; PITHAMPUR TO ${placeOfDelivery}</span>
-    <span>INVOICE NO: ${billNo}</span>
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Annexure - ${billNo}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; font-size: 9pt; background: #fff; color: #000; }
+    .page { width: 277mm; margin: 0 auto; padding: 8mm 10mm; }
+    .co-name { font-size: 13pt; font-weight: bold; text-align: center; }
+    .co-addr { font-size: 8pt; text-align: center; margin-top: 1px; }
+    .info-bar { display: flex; justify-content: space-between; border: 1px solid #000; padding: 3px 6px; font-size: 9pt; font-weight: bold; margin: 5px 0 0; }
+    table { width: 100%; border-collapse: collapse; margin-top: 0; }
+    th { border: 1px solid #000; padding: 4px 3px; background: #e8e8e8; font-size: 8pt; font-weight: bold; text-align: center; line-height: 1.2; }
+    td { border: 1px solid #000; padding: 3px 3px; font-size: 8pt; text-align: center; }
+    .total { text-align: right; font-size: 9pt; font-weight: bold; margin-top: 4px; }
+    .print-btn { position: fixed; top: 12px; right: 18px; background: #2563EB; color: #fff; border: none; padding: 8px 22px; font-size: 13px; font-weight: 700; border-radius: 6px; cursor: pointer; z-index: 999; }
+    @media print { .print-btn { display: none; } @page { size: A4 landscape; margin: 8mm 10mm; } }
+  </style>
+</head>
+<body>
+  <button class="print-btn" onclick="window.print()">🖨️ Print / Save as PDF</button>
+  <div class="page">
+    <div class="co-name">SHREE AARYA LOGISTICS</div>
+    <div class="co-addr">197-AMBIKAPURI EXTENSION. AERODROME ROAD, NEAR GANGESHWAR DHAM TEMPLE, INDORE-M.P.-452005</div>
+    <div class="info-bar">
+      <span>DEALER NAME: ${consigneeName}&nbsp;&nbsp; PITHAMPUR TO ${placeOfDelivery}</span>
+      <span>INVOICE NO: ${billNo}</span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:4%">Sr.<br>No.</th>
+          <th style="width:11%">INVOICE DATE</th>
+          <th style="width:15%">INVOICE NO</th>
+          <th style="width:21%">CHASSIS NUMBER</th>
+          <th style="width:16%">ENGINE NUMBER</th>
+          <th style="width:13%">TEMP. REG. NO.</th>
+          <th style="width:10%">COLLECTION<br>DATE</th>
+          <th style="width:10%">DELIVERY<br>DATE</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="total">Total Vehicles: ${vehicles.length}</div>
   </div>
-  <table>
-    <thead><tr>
-      <th style="width:4%">Sr.<br>No.</th>
-      <th style="width:11%">INVOICE DATE</th>
-      <th style="width:15%">INVOICE NO</th>
-      <th style="width:21%">CHASSIS NUMBER</th>
-      <th style="width:16%">ENGINE NUMBER</th>
-      <th style="width:13%">TEMP. REG. NO.</th>
-      <th style="width:10%">COLLECTION<br>DATE</th>
-      <th style="width:10%">DELIVERY<br>DATE</th>
-    </tr></thead>
-    <tbody>${rows}</tbody>
-  </table>
-  <div class="total">Total Vehicles: ${vehicles.length}</div>
-</div>
-</body></html>`;
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.send(html);
+</body>
+</html>`;
+
+    // Convert HTML to PDF buffer using the generatePDFBuffer function from billing service
+    const pdfBuffer = await generatePDFBuffer(html);
+    console.log('PDF generated for annexure, sending response');
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="ANNEXURE_${billNo}.pdf"`);
+    res.send(pdfBuffer);
   } catch (err) { logger.error('generateAnnexurePDF:', err.message); res.status(500).json({ message: err.message }); }
 };
 
@@ -530,20 +550,24 @@ exports.generateAnnexurePDF = async (req, res) => {
 
 exports.generateTollPDF = async (req, res) => {
   try {
+    console.log('Starting expense reimbursement toll PDF generation for bill:', req.query.billNo);
     const { vehicleSheetName, billNo } = req.query;
     if (!vehicleSheetName || !billNo) return res.status(400).json({ message: 'vehicleSheetName and billNo required' });
     const num = parseInt(billNo, 10);
     if (isNaN(num)) return res.status(400).json({ message: 'billNo must be a number' });
 
+    console.log('Looking for billing record with sheet:', vehicleSheetName, 'and bill no:', num);
     const record = await BillingRecord.findOne({
       vehicleSheetName,
       $or: [{ invoiceNo: num }, { tollBillNo: num }],
     }).lean();
     if (!record) return res.status(404).json({ message: `No bill found for bill no ${billNo} in sheet "${vehicleSheetName}"` });
 
+    console.log('Found billing record, fetching vehicles...');
     const vehicles = await Vehicle.find({ uniqueId: { $in: record.vehicleUniqueIds } }).lean();
     if (!vehicles.length) return res.status(404).json({ message: 'No vehicles found for this bill' });
 
+    console.log('Vehicles fetched, calculating toll data for', vehicles.length, 'vehicles');
     const consigneeName   = vehicles[0].consigneeName || '';
     const placeOfDelivery = vehicles[0].placeOfDelivery || '';
 
@@ -559,10 +583,12 @@ exports.generateTollPDF = async (req, res) => {
     for (const [model, vList] of Object.entries(byModel)) {
       const qty = vList.length, rate = tollData[model] || 0, amt = qty * rate;
       totalAmount += amt;
+      console.log(`Model ${model}: Qty=${qty}, Rate=${rate}, Amount=${amt}`);
       rows.push({ srNo: srNo++, model, qty, rate, amt });
     }
 
     const amountInWords = numberToWords(totalAmount).toUpperCase();
+    console.log('Total amount calculated:', totalAmount, 'Amount in words:', amountInWords);
 
     const rowsHtml = rows.map(r => `
       <tr>
@@ -578,53 +604,70 @@ exports.generateTollPDF = async (req, res) => {
         <td></td><td></td><td class="right">0</td>
       </tr>`).join('');
 
-    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Expense Reimbursement - ${billNo}</title>
-<style>
-  *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:Arial,sans-serif;font-size:9pt;background:#fff;color:#000}
-  .page{width:190mm;margin:0 auto;padding:8mm 10mm}
-  .co-name{font-size:13pt;font-weight:bold;text-align:center}
-  .co-addr{font-size:8pt;text-align:center;margin-top:1px}
-  .info-bar{display:flex;justify-content:space-between;border:1px solid #000;padding:3px 6px;font-size:9pt;font-weight:bold;margin:5px 0 0}
-  table{width:100%;border-collapse:collapse}
-  th{border:1px solid #000;padding:4px 5px;background:#e8e8e8;font-size:9pt;font-weight:bold;text-align:center}
-  td{border:1px solid #000;padding:3px 5px;font-size:9pt;text-align:center}
-  td.model{text-align:left;padding-left:6px} td.right{text-align:right;padding-right:6px}
-  .summary{border:1px solid #000;padding:5px 8px;margin-top:8px;font-size:9pt}
-  .sig{margin-top:14px;font-size:9pt}
-  .print-btn{position:fixed;top:12px;right:18px;background:#16A34A;color:#fff;border:none;padding:8px 22px;font-size:13px;font-weight:700;border-radius:6px;cursor:pointer;z-index:999}
-  @media print{.print-btn{display:none}@page{size:A4 portrait;margin:8mm 10mm}}
-</style></head><body>
-<button class="print-btn" onclick="window.print()">🖨️ Print / Save as PDF</button>
-<div class="page">
-  <div class="co-name">SHREE AARYA LOGISTICS</div>
-  <div class="co-addr">197-AMBIKAPURI EXTENSION. AERODROME ROAD, NEAR GANGESHWAR DHAM TEMPLE, INDORE-M.P.-452005</div>
-  <div class="info-bar">
-    <span>DEALER NAME: ${consigneeName}&nbsp;&nbsp; PITHAMPUR TO ${placeOfDelivery}</span>
-    <span>INVOICE NO: ${String(billNo).padStart(3, '0')}</span>
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Expense Reimbursement - ${billNo}</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:Arial,sans-serif;font-size:9pt;background:#fff;color:#000}
+    .page{width:190mm;margin:0 auto;padding:8mm 10mm}
+    .co-name{font-size:13pt;font-weight:bold;text-align:center}
+    .co-addr{font-size:8pt;text-align:center;margin-top:1px}
+    .info-bar{display:flex;justify-content:space-between;border:1px solid #000;padding:3px 6px;font-size:9pt;font-weight:bold;margin:5px 0 0}
+    table{width:100%;border-collapse:collapse}
+    th{border:1px solid #000;padding:4px 5px;background:#e8e8e8;font-size:9pt;font-weight:bold;text-align:center}
+    td{border:1px solid #000;padding:3px 5px;font-size:9pt;text-align:center}
+    td.model{text-align:left;padding-left:6px} td.right{text-align:right;padding-right:6px}
+    .summary{border:1px solid #000;padding:5px 8px;margin-top:8px;font-size:9pt}
+    .sig{margin-top:14px;font-size:9pt}
+    .print-btn{position:fixed;top:12px;right:18px;background:#16A34A;color:#fff;border:none;padding:8px 22px;font-size:13px;font-weight:700;border-radius:6px;cursor:pointer;z-index:999}
+    @media print{.print-btn{display:none}@page{size:A4 portrait;margin:8mm 10mm}}
+  </style>
+</head>
+<body>
+  <button class="print-btn" onclick="window.print()">🖨️ Print / Save as PDF</button>
+  <div class="page">
+    <div class="co-name">SHREE AARYA LOGISTICS</div>
+    <div class="co-addr">197-AMBIKAPURI EXTENSION. AERODROME ROAD, NEAR GANGESHWAR DHAM TEMPLE, INDORE-M.P.-452005</div>
+    <div class="info-bar">
+      <span>DEALER NAME: ${consigneeName}&nbsp;&nbsp; PITHAMPUR TO ${placeOfDelivery}</span>
+      <span>INVOICE NO: ${String(billNo).padStart(3, '0')}</span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:10%">Sr. No.</th>
+          <th style="width:42%">MODEL</th>
+          <th style="width:16%">QUANTITY</th>
+          <th style="width:16%">RATE</th>
+          <th style="width:16%">AMOUNT</th>
+        </tr>
+      </thead>
+      <tbody>${rowsHtml}${fillerHtml}</tbody>
+    </table>
+    <div class="summary">
+      <div style="font-weight:bold;font-size:9.5pt">EXPENSES REIMBURSEMENT TOLL & TAX</div>
+      <div style="margin-top:3px">Invoice Value Rs. : <strong>${totalAmount.toFixed(2)}</strong></div>
+      <div style="margin-top:3px">Invoice Value Rs. (In Words) : <strong>- ${amountInWords} RUPEES AND ZERO PAISA ONLY</strong></div>
+    </div>
+    <div class="sig">
+      <div>FOR : <strong>SHREE AARYA LOGISTICS</strong></div>
+      <div style="height:24px"></div>
+      <div><strong>AUTHORIZED SIGNATORY</strong></div>
+      <div style="margin-top:3px">PLACE : PITHAMPUR</div>
+      <div style="margin-top:8px;font-size:8pt;border-top:1px solid #ccc;padding-top:5px">Certified that the particulars given above are true and correct.</div>
+    </div>
   </div>
-  <table>
-    <thead><tr>
-      <th style="width:10%">Sr. No.</th><th style="width:42%">MODEL</th>
-      <th style="width:16%">QUANTITY</th><th style="width:16%">RATE</th><th style="width:16%">AMOUNT</th>
-    </tr></thead>
-    <tbody>${rowsHtml}${fillerHtml}</tbody>
-  </table>
-  <div class="summary">
-    <div style="font-weight:bold;font-size:9.5pt">EXPENSES REIMBURSEMENT TOLL &amp; TAX</div>
-    <div style="margin-top:3px">Invoice Value Rs. : <strong>${totalAmount.toFixed(2)}</strong></div>
-    <div style="margin-top:3px">Invoice Value Rs. (In Words) : <strong>- ${amountInWords} RUPEES AND ZERO PAISA ONLY</strong></div>
-  </div>
-  <div class="sig">
-    <div>FOR : <strong>SHREE AARYA LOGISTICS</strong></div>
-    <div style="height:24px"></div>
-    <div><strong>AUTHORIZED SIGNATORY</strong></div>
-    <div style="margin-top:3px">PLACE : PITHAMPUR</div>
-    <div style="margin-top:8px;font-size:8pt;border-top:1px solid #ccc;padding-top:5px">Certified that the particulars given above are true and correct.</div>
-  </div>
-</div>
-</body></html>`;
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.send(html);
+</body>
+</html>`;
+
+    // Convert HTML to PDF buffer using the generatePDFBuffer function from billing service
+    const pdfBuffer = await generatePDFBuffer(html);
+    console.log('PDF generated for expense reimbursement toll, sending response');
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="TOLL_${billNo}.pdf"`);
+    res.send(pdfBuffer);
   } catch (err) { logger.error('generateTollPDF:', err.message); res.status(500).json({ message: err.message }); }
 };

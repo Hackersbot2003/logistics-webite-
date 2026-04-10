@@ -6,8 +6,9 @@
  * - FML_EXP: Transportation Bill ONLY (no toll, matching reference expbillingController)
  */
 
-const { getSheetsClient } = require('../config/google');
+const { getSheetsClient, getDriveClient } = require('../config/google');
 const logger = require('../config/logger');
+const puppeteer = require('puppeteer');
 
 // ─── 68 columns — identical to reference server ────────────────────────────────
 const CUSTOM_HEADERS = [
@@ -786,8 +787,102 @@ function buildBillingHTML({ record, calc, overallKm, sheetType }) {
 </html>`;
 }
 
+// ─── PDF Generation ──────────────────────────────────────────────────────────────
+async function generatePDFBuffer(htmlContent) {
+  console.log('Starting PDF generation...');
+  let browser;
+  try {
+    console.log('Launching puppeteer browser...');
+    browser = await puppeteer.launch({ 
+      headless: "new",
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--disable-gpu',
+        '--disable-web-security',
+        '--disable-features=VizDisplayCompositor',
+        '--disable-logging',
+        '--disable-background-timer-throttling',
+        '--disable-renderer-backgrounding',
+        '--enable-features=NetworkService',
+      ],
+    });
+    console.log('Browser launched successfully');
+    const page = await browser.newPage();
+    console.log('New page created, setting content...');
+    await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+    console.log('Content set, generating PDF...');
+    
+    let pdfBuffer = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: {
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0,
+      },
+    });
+
+    console.log('PDF generated successfully, size:', pdfBuffer.length, 'bytes');
+    
+    // Ensure pdfBuffer is a Buffer object before returning
+    if (!Buffer.isBuffer(pdfBuffer)) {
+      pdfBuffer = Buffer.from(pdfBuffer);
+    }
+    
+    return pdfBuffer;
+  } catch (error) {
+    console.error('PDF generation failed:', error.message);
+    console.error('Error stack:', error.stack);
+    logger.error(`PDF generation failed: ${error.message}`);
+    throw error;
+  } finally {
+    if (browser) {
+      console.log('Closing browser...');
+      await browser.close();
+      console.log('Browser closed');
+    }
+  }
+}
+
+// ─── Upload to Google Drive ──────────────────────────────────────────────────────
+const { Readable } = require('stream');
+
+async function uploadToDrive(buffer, fileName, folderId) {
+  try {
+    const drive = getDriveClient();
+    
+    const fileMetadata = {
+      name: fileName,
+      parents: [folderId],
+    };
+
+    const media = {
+      mimeType: 'application/pdf',
+      body: Readable.from(buffer),
+    };
+
+    const response = await drive.files.create({
+      resource: fileMetadata,
+      media: media,
+      fields: 'id, webViewLink, webContentLink',
+    });
+
+    return response.data;
+  } catch (error) {
+    logger.error(`Upload to Drive failed: ${error.message}`);
+    throw error;
+  }
+}
+
 module.exports = {
   CUSTOM_HEADERS, SUPPLIER, RECIPIENT,
   numberToWords, performCalculations, buildVehicleRow, buildBillingHTML,
   ensureBillingTab, appendVehicleRows, markVehiclesBilledInSheet,
+  generatePDFBuffer, uploadToDrive,
 };
