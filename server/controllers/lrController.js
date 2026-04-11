@@ -4,23 +4,31 @@ const Vehicle = require('../models/Vehicle');
 const LrSignature = require('../models/LrSignature');
 const { uploadFileToDrive, deleteFileFromDrive } = require('../services/driveService');
 const logger = require('../config/logger');
-const pdf = require('html-pdf');
+const puppeteer = require('puppeteer');
 
 // ── Helper: HTML → PDF buffer ─────────────────────────────────────────────────
-function htmlToPdfBuffer(html) {
-  return new Promise((resolve, reject) => {
-   pdf.create(html, {
-  format: "A4",
-  orientation: "portrait",
-  border: {
-    top: "0mm",
-    right: "0mm",
-    bottom: "0mm",
-    left: "0mm",
-  },
-  timeout: 60000,
-}).toBuffer((err, buf) => (err ? reject(err) : resolve(buf)));
+async function htmlToPdfBuffer(html) {
+  const browser = await puppeteer.launch({
+    headless: 'new',
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu',
+    ],
   });
+  try {
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'networkidle0', timeout: 60000 });
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: { top: '0mm', right: '0mm', bottom: '0mm', left: '0mm' },
+    });
+    return pdfBuffer;
+  } finally {
+    await browser.close();
+  }
 }
 
 // ── Helper: Get Local Logo as Base64 ──────────────────────────────────────────
