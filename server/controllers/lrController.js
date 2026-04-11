@@ -15,6 +15,7 @@ async function htmlToPdfBuffer(html) {
       '--disable-setuid-sandbox',
       '--disable-dev-shm-usage',
       '--disable-gpu',
+      '--disable-extensions',
     ],
   });
   try {
@@ -115,9 +116,9 @@ exports.generateLR = async (req, res) => {
     const { challanNo, addSignature, signatureId } = req.query;
     if (!challanNo) return res.status(400).json({ message: 'challanNo required' });
 
-    const vehicle = await Vehicle.findOne({ 
-        challanNo: new RegExp(`^${challanNo}$`, 'i'), 
-        deletedAt: null 
+    const vehicle = await Vehicle.findOne({
+      challanNo: new RegExp(`^${challanNo}$`, 'i'),
+      deletedAt: null
     }).lean();
 
     if (!vehicle) return res.status(404).json({ message: `Challan "${challanNo}" not found` });
@@ -144,7 +145,7 @@ exports.generateLR = async (req, res) => {
   }
 };
 
-// ── HTML/UI Building Functions ───────────────────────────────────────────────
+// ── HTML/UI Building Functions ────────────────────────────────────────────────
 
 function buildLRHtml(v, signatureUrl, logoBase64) {
   const fmt = (d) => {
@@ -155,68 +156,68 @@ function buildLRHtml(v, signatureUrl, logoBase64) {
   const copies = ['ORIGINAL', 'DUPLICATE', 'TRIPLICATE'];
 
   const css = `
-   * { box-sizing: border-box; margin: 0; padding: 0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
-html, body {
-  background: #fff;
-  font-family: Arial, sans-serif;
-  -webkit-print-color-adjust: exact;
-}
+    html, body {
+      background: #fff;
+      font-family: Arial, sans-serif;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
 
-/* A4 PAGE */
-.page {
-  width: 210mm;
-  height: 297mm;
-  padding: 8mm;
-  page-break-after: always;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
+    /* ── A4 PAGE: fixed pixel dimensions (794 x 1123px @ 96dpi) ── */
+    .page {
+      width: 794px;
+      height: 1123px;
+      padding: 24px;
+      page-break-after: always;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
 
-/* INNER BOX */
-.inner-content {
-  width: 100%;
-  height: 100%;
-  border: 1px solid #000;
-  padding: 4mm 5mm;
+    /* ── INNER BOX ── */
+    .inner-content {
+      width: 100%;
+      height: 100%;
+      border: 1px solid #000;
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+    }
 
-  display: flex;
-  flex-direction: column;
+    /* ── TABLE SAFETY ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 3px;
+    }
 
-  /* NEW FIX */
-  justify-content: space-between;
-}
-
-/* TABLE SAFETY */
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-bottom: 2px; /* reduced */
-}
-
-tr, td, th {
-  border: 1px solid #000;
-  padding: 2px 4px;   /* reduced */
-  font-size: 7.5px;   /* reduced */
-  line-height: 1.2;   /* tighter */
-}
+    tr, td, th {
+      border: 1px solid #000;
+      padding: 2px 5px;
+      font-size: 8px;
+      line-height: 1.3;
+    }
 
     /* ── Header section ── */
     .header-title {
-      font-size: 10px;
+      font-size: 11px;
       font-weight: bold;
       text-align: center;
-      padding: 2px 0;
+      padding: 3px 0;
     }
     .sub-title {
       font-size: 9px;
       text-align: center;
       line-height: 1.5;
-      padding: 1px 0;
+      padding: 2px 0;
     }
     .doc-title {
-      font-size: 12px;
+      font-size: 13px;
       font-weight: bold;
       text-align: center;
       padding: 5px;
@@ -227,7 +228,7 @@ tr, td, th {
     /* ── Field labels ── */
     .lbl {
       font-weight: bold;
-      font-size: 9px;
+      font-size: 8px;
       display: block;
       margin-bottom: 1px;
       color: #333;
@@ -236,7 +237,7 @@ tr, td, th {
     /* ── ORIGINAL / DUPLICATE / TRIPLICATE badge ── */
     .copy-badge {
       font-weight: bold;
-      font-size: 9px;
+      font-size: 10px;
       text-align: right;
       vertical-align: middle;
       border: none !important;
@@ -244,17 +245,17 @@ tr, td, th {
     .no-border td { border: none !important; }
 
     /* ── Checklist header row ── */
-    .chk-header { background: #eeeeee; font-weight: bold; font-size: 9px; }
+    .chk-header { background: #eeeeee; font-weight: bold; font-size: 8px; }
 
     /* ── Rating table header ── */
-    .rating-header { background: #eeeeee; font-weight: bold; font-size: 9px; text-align: center; }
+    .rating-header { background: #eeeeee; font-weight: bold; font-size: 8px; text-align: center; }
 
     /* ── Remarks box ── */
     .remarks-box {
       font-size: 8px;
-      line-height: 2;
+      line-height: 1.9;
       border: 1px solid #000;
-      padding: 3px 5px;
+      padding: 3px 6px;
       margin-bottom: 3px;
     }
 
@@ -265,7 +266,7 @@ tr, td, th {
       text-align: center;
       font-weight: bold;
       font-size: 9px;
-      padding-bottom: 4px;
+      padding-bottom: 5px;
     }
     .sig-img {
       max-height: 55px;
@@ -274,14 +275,11 @@ tr, td, th {
       margin: 0 auto 3px auto;
     }
 
-    /* ── Spacer pushes signature to bottom ── */
-   
-
     /* ── Section heading ── */
     .section-heading {
       font-weight: bold;
       font-size: 9px;
-      margin: 2px 0 1px 0;
+      margin: 2px 0 2px 0;
     }
 
     @page { size: A4 portrait; margin: 0; }
@@ -304,223 +302,218 @@ function buildPage(v, copy, signatureUrl, logoBase64, fmt) {
 
   return `
   <div class="page">
-    
-      <div class="inner-content">
+    <div class="inner-content">
 
-        <!-- ══ HEADER ══ -->
-        <table style="margin-bottom:3px;">
-          <tr>
-            <td rowspan="2" style="width:95px; text-align:center; vertical-align:middle; border:1px solid #000; padding:4px;">
-              ${logoHtml}
-            </td>
-            <td class="header-title" style="border:1px solid #000;">SHREE AARYA LOGISTICS</td>
-          </tr>
-          <tr>
-            <td class="sub-title" style="border:1px solid #000;">
-              VIJAY NAGAR, INDORE-M.P.-452010<br>
-              CONTACT DETAILS : INDORE +91-91111-91111
-            </td>
-          </tr>
-          <tr>
-            <td colspan="2" class="doc-title" style="border:1px solid #000;">CONSIGNMENT NOTE CUM CHECK LIST</td>
-          </tr>
-        </table>
+      <!-- ══ HEADER ══ -->
+      <table style="margin-bottom:4px;">
+        <tr>
+          <td rowspan="2" style="width:95px; text-align:center; vertical-align:middle; border:1px solid #000; padding:4px;">
+            ${logoHtml}
+          </td>
+          <td class="header-title" style="border:1px solid #000;">SHREE AARYA LOGISTICS</td>
+        </tr>
+        <tr>
+          <td class="sub-title" style="border:1px solid #000;">
+            VIJAY NAGAR, INDORE-M.P.-452010<br>
+            CONTACT DETAILS : INDORE +91-91111-91111
+          </td>
+        </tr>
+        <tr>
+          <td colspan="2" class="doc-title" style="border:1px solid #000;">CONSIGNMENT NOTE CUM CHECK LIST</td>
+        </tr>
+      </table>
 
-        <!-- ══ CHALLAN NO + COPY BADGE ══ -->
-        <table class="no-border" style="margin-bottom:2px;">
-          <tr>
-            <td style="width:60%; padding:2px 4px;">
-              <span class="lbl" style="display:inline;">Challan No:</span>
-              <strong style="font-size:15px; margin-left:4px;">${v.challanNo || ''}</strong>
-            </td>
-            <td class="copy-badge" style="padding:2px 4px;">${copy}</td>
-          </tr>
-        </table>
+      <!-- ══ CHALLAN NO + COPY BADGE ══ -->
+      <table class="no-border" style="margin-bottom:3px;">
+        <tr>
+          <td style="width:60%; padding:2px 5px;">
+            <span class="lbl" style="display:inline;">Challan No:</span>
+            <strong style="font-size:16px; margin-left:4px;">${v.challanNo || ''}</strong>
+          </td>
+          <td class="copy-badge" style="padding:2px 5px;">${copy}</td>
+        </tr>
+      </table>
 
-        <!-- ══ CONSIGNOR ROW ══ -->
-        <table>
-          <tr>
-            <td style="width:48%">
-              <span class="lbl">Name of Consignor:</span>
-              ${v.consignorName || 'FORCE MOTOR LIMITED'}
-            </td>
-            <td style="width:26%">
-              <span class="lbl">Invoice Date</span>
-              ${fmt(v.invoiceDate)}
-            </td>
-            <td style="width:26%">
-              <span class="lbl">Challan Date</span>
-              ${fmt(v.dispatchDate || v.date)}
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <span class="lbl">Address of Consignor:</span>
-              ${v.consignorAddress || 'PITHUMPUR, M.P.'}
-            </td>
-            <td colspan="2">
-              <span class="lbl">Expected Delivery Date</span>
-              ${fmt(v.expecteddeliveryDate)}
-            </td>
-          </tr>
-        </table>
+      <!-- ══ CONSIGNOR ROW ══ -->
+      <table>
+        <tr>
+          <td style="width:48%">
+            <span class="lbl">Name of Consignor:</span>
+            ${v.consignorName || 'FORCE MOTOR LIMITED'}
+          </td>
+          <td style="width:26%">
+            <span class="lbl">Invoice Date</span>
+            ${fmt(v.invoiceDate)}
+          </td>
+          <td style="width:26%">
+            <span class="lbl">Challan Date</span>
+            ${fmt(v.dispatchDate || v.date)}
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <span class="lbl">Address of Consignor:</span>
+            ${v.consignorAddress || 'PITHUMPUR, M.P.'}
+          </td>
+          <td colspan="2">
+            <span class="lbl">Expected Delivery Date</span>
+            ${fmt(v.expecteddeliveryDate)}
+          </td>
+        </tr>
+      </table>
 
-        <!-- ══ CONSIGNEE + DRIVER ══ -->
-        <table>
-          <tr>
-            <td style="width:50%">
-              <span class="lbl">Name of Depot/Dealer/Customer:</span>
-              ${v.consigneeName || ''}
-            </td>
-            <td style="width:50%">
-              <span class="lbl">Driver Name</span>
-              ${v.driverName || ''}
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <span class="lbl">Address of Depot/Dealer/Customer:</span>
-              ${v.consigneeAddress || ''}
-            </td>
-            <td>
-              <span class="lbl">Place</span>
-              ${v.placeOfCollection || ''}
-            </td>
-          </tr>
-          <tr>
-            <td></td>
-            <td>
-              <span class="lbl">Delivery</span>
-              ${v.placeOfDelivery || ''}
-            </td>
-          </tr>
-        </table>
+      <!-- ══ CONSIGNEE + DRIVER ══ -->
+      <table>
+        <tr>
+          <td style="width:50%">
+            <span class="lbl">Name of Depot/Dealer/Customer:</span>
+            ${v.consigneeName || ''}
+          </td>
+          <td style="width:50%">
+            <span class="lbl">Driver Name</span>
+            ${v.driverName || ''}
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <span class="lbl">Address of Depot/Dealer/Customer:</span>
+            ${v.consigneeAddress || ''}
+          </td>
+          <td>
+            <span class="lbl">Place</span>
+            ${v.placeOfCollection || ''}
+          </td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>
+            <span class="lbl">Delivery</span>
+            ${v.placeOfDelivery || ''}
+          </td>
+        </tr>
+      </table>
 
-        <!-- ══ VEHICLE DETAILS ══ -->
-        <table>
-          <tr>
-            <td style="width:33%">
-              <span class="lbl">Chassis No:</span>
-              ${v.chassisNo || ''}
-            </td>
-            <td colspan="2">
-              <span class="lbl">Vehicle Model:</span>
-              ${modelDisplay}
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <span class="lbl">Engine No:</span>
-              ${v.engineNo || ''}
-            </td>
-            <td colspan="2">
-              <span class="lbl">Temp Reg No:</span>
-              ${v.tempRegNo || ''}
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <span class="lbl">Invoice No:</span>
-              ${v.invoiceNo || ''}
-            </td>
-            <td colspan="2">
-              <span class="lbl">Insurance No:</span>
-              ${v.insuranceNo || ''}
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <span class="lbl">Insurance Company:</span>
-              ${v.insuranceCompany || ''}
-            </td>
-            <td colspan="2">
-              <span class="lbl">KM Reading:</span>
-              Start: _______ &nbsp;&nbsp; End: _______
-            </td>
-          </tr>
-        </table>
+      <!-- ══ VEHICLE DETAILS ══ -->
+      <table>
+        <tr>
+          <td style="width:33%">
+            <span class="lbl">Chassis No:</span>
+            ${v.chassisNo || ''}
+          </td>
+          <td colspan="2">
+            <span class="lbl">Vehicle Model:</span>
+            ${modelDisplay}
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <span class="lbl">Engine No:</span>
+            ${v.engineNo || ''}
+          </td>
+          <td colspan="2">
+            <span class="lbl">Temp Reg No:</span>
+            ${v.tempRegNo || ''}
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <span class="lbl">Invoice No:</span>
+            ${v.invoiceNo || ''}
+          </td>
+          <td colspan="2">
+            <span class="lbl">Insurance No:</span>
+            ${v.insuranceNo || ''}
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <span class="lbl">Insurance Company:</span>
+            ${v.insuranceCompany || ''}
+          </td>
+          <td colspan="2">
+            <span class="lbl">KM Reading:</span>
+            Start: _______ &nbsp;&nbsp; End: _______
+          </td>
+        </tr>
+      </table>
 
-        <!-- ══ CHECKLIST ══ -->
-        <div class="section-heading">Checklist (Kindly Tick (✓))</div>
-        <table>
-          <tr>
-            <th class="chk-header" style="width:65%; text-align:left;">Checklist</th>
-            <th class="chk-header" style="width:17.5%; text-align:center;">Yes</th>
-            <th class="chk-header" style="width:17.5%; text-align:center;">No</th>
-          </tr>
-          <tr><td>Invoice Original / Duplicate:</td><td style="text-align:center;">☐</td><td style="text-align:center;">☐</td></tr>
-          <tr><td>Insurance Paper:</td><td style="text-align:center;">☐</td><td style="text-align:center;">☐</td></tr>
-          <tr><td>T.R.C.:</td><td style="text-align:center;">☐</td><td style="text-align:center;">☐</td></tr>
-          <tr><td>Service Book:</td><td style="text-align:center;">☐</td><td style="text-align:center;">☐</td></tr>
-          <tr><td>Tool Kit:</td><td style="text-align:center;">☐</td><td style="text-align:center;">☐</td></tr>
-          <tr><td>Key Ring:</td><td style="text-align:center;">☐</td><td style="text-align:center;">☐</td></tr>
-        </table>
+      <!-- ══ CHECKLIST ══ -->
+      <div class="section-heading">Checklist (Kindly Tick (✓))</div>
+      <table>
+        <tr>
+          <th class="chk-header" style="width:65%; text-align:left;">Checklist</th>
+          <th class="chk-header" style="width:17.5%; text-align:center;">Yes</th>
+          <th class="chk-header" style="width:17.5%; text-align:center;">No</th>
+        </tr>
+        <tr><td>Invoice Original / Duplicate:</td><td style="text-align:center;">☐</td><td style="text-align:center;">☐</td></tr>
+        <tr><td>Insurance Paper:</td><td style="text-align:center;">☐</td><td style="text-align:center;">☐</td></tr>
+        <tr><td>T.R.C.:</td><td style="text-align:center;">☐</td><td style="text-align:center;">☐</td></tr>
+        <tr><td>Service Book:</td><td style="text-align:center;">☐</td><td style="text-align:center;">☐</td></tr>
+        <tr><td>Tool Kit:</td><td style="text-align:center;">☐</td><td style="text-align:center;">☐</td></tr>
+        <tr><td>Key Ring:</td><td style="text-align:center;">☐</td><td style="text-align:center;">☐</td></tr>
+      </table>
 
-        <!-- ══ RATING TABLE ══ -->
-        <table>
-          <tr>
-            <th class="rating-header" style="width:42%; text-align:left;">Particular</th>
-            <th class="rating-header">Very Good</th>
-            <th class="rating-header">Good</th>
-            <th class="rating-header">Average</th>
-            <th class="rating-header">Poor</th>
-          </tr>
-          <tr style="height:16px;"><td>Delivery on Time</td><td></td><td></td><td></td><td></td></tr>
-          <tr style="height:16px;"><td>Behavior of Incharge</td><td></td><td></td><td></td><td></td></tr>
-          <tr style="height:16px;"><td>Cleanliness of Vehicle</td><td></td><td></td><td></td><td></td></tr>
-        </table>
+      <!-- ══ RATING TABLE ══ -->
+      <table>
+        <tr>
+          <th class="rating-header" style="width:42%; text-align:left;">Particular</th>
+          <th class="rating-header">Very Good</th>
+          <th class="rating-header">Good</th>
+          <th class="rating-header">Average</th>
+          <th class="rating-header">Poor</th>
+        </tr>
+        <tr style="height:18px;"><td>Delivery on Time</td><td></td><td></td><td></td><td></td></tr>
+        <tr style="height:18px;"><td>Behavior of Incharge</td><td></td><td></td><td></td><td></td></tr>
+        <tr style="height:18px;"><td>Cleanliness of Vehicle</td><td></td><td></td><td></td><td></td></tr>
+      </table>
 
-        <!-- ══ DAMAGE + DISCLAIMER ══ -->
-        <div style="font-size:12px; margin:2px 0;">
-          Damage if any: &nbsp; ☐ YES &nbsp; ☐ NO &nbsp;&nbsp;&nbsp; E-Mail I'd: _______________________<br>
-          <span style="font-style:italic; font-size:7.5px;">In case of any damage provide a photograph with incharge of convoy, standing near by the vehicle.</span>
-        </div>
+      <!-- ══ DAMAGE + DISCLAIMER ══ -->
+      <div style="font-size:8px; margin:3px 0;">
+        Damage if any: &nbsp; ☐ YES &nbsp; ☐ NO &nbsp;&nbsp;&nbsp; E-Mail I'd: _______________________<br>
+        <span style="font-style:italic; font-size:7.5px;">In case of any damage provide a photograph with incharge of convoy, standing near by the vehicle.</span>
+      </div>
 
-        <!-- ══ PARTNER INFO ══ -->
-        <table>
-          <tr>
-            <td style="width:33%">PARTNER NAME:</td>
-            <td style="width:33%">E-MAIL ID:</td>
-            <td style="width:34%">CONTACT NO:</td>
-          </tr>
-          <tr>
-            <td colspan="3">FOR TRANSIT RELATED INFORMATION CONTACT: 91-9752092341</td>
-          </tr>
-        </table>
+      <!-- ══ PARTNER INFO ══ -->
+      <table>
+        <tr>
+          <td style="width:33%">PARTNER NAME:</td>
+          <td style="width:33%">E-MAIL ID:</td>
+          <td style="width:34%">CONTACT NO:</td>
+        </tr>
+        <tr>
+          <td colspan="3">FOR TRANSIT RELATED INFORMATION CONTACT: 91-9752092341</td>
+        </tr>
+      </table>
 
-        <!-- ══ REMARKS BOX ══ -->
-        <div class="remarks-box">
-          At the time of vehicle delivery Diesel in tank 7 Ltrs :-<br>
-          In case of Manufacturing / Technical fault :-<br>
-          Remark :-<br>
-          Any Comments/Suggestion for Improvement of Services :-
-        </div>
+      <!-- ══ REMARKS BOX ══ -->
+      <div class="remarks-box">
+        At the time of vehicle delivery Diesel in tank 7 Ltrs :-<br>
+        In case of Manufacturing / Technical fault :-<br>
+        Remark :-<br>
+        Any Comments/Suggestion for Improvement of Services :-
+      </div>
 
-        <!-- ══ RECIPIENT ROW ══ -->
-        <table>
-          <tr>
-            <td style="width:55%">Receipent Name: ${v.consigneeName || ''}</td>
-            <td>Receipent Mob No.:</td>
-          </tr>
-        </table>
+      <!-- ══ RECIPIENT ROW ══ -->
+      <table>
+        <tr>
+          <td style="width:55%">Receipent Name: ${v.consigneeName || ''}</td>
+          <td>Receipent Mob No.:</td>
+        </tr>
+      </table>
 
-        <!-- ══ SPACER pushes signatures to bottom ══ -->
-      
+      <!-- ══ SIGNATURE ROW ══ -->
+      <table style="margin-bottom:0;">
+        <tr>
+          <td class="sig-cell" style="width:33%;">DRIVER SIGNATURE</td>
+          <td class="sig-cell" style="width:34%;">
+            ${sigImg}
+            SIGNATURE &amp; STAMP<br>
+            DELIVERY DATE: ${fmt(v.deliveryDate || v.expecteddeliveryDate)}
+          </td>
+          <td class="sig-cell" style="width:33%;">RECEIPIENT SIGNATURE &amp; STAMP</td>
+        </tr>
+      </table>
 
-        <!-- ══ SIGNATURE ROW ══ -->
-        <table style="margin-bottom:0;">
-          <tr>
-            <td class="sig-cell" style="width:33%;">DRIVER SIGNATURE</td>
-            <td class="sig-cell" style="width:34%;">
-              ${sigImg}
-              SIGNATURE &amp; STAMP<br>
-              DELIVERY DATE: ${fmt(v.deliveryDate || v.expecteddeliveryDate)}
-            </td>
-            <td class="sig-cell" style="width:33%;">RECEIPIENT SIGNATURE &amp; STAMP</td>
-          </tr>
-        </table>
-
-      </div><!-- /inner-content -->
-    
+    </div><!-- /inner-content -->
   </div><!-- /page -->`;
 }
