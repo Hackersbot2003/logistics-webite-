@@ -157,8 +157,8 @@ html, body {
 
 /* A4 PAGE */
 .page {
-  width: 210mm;
-  height: 297mm;
+  width: 180mm;
+  height: 170mm;
   padding: 8mm;
   page-break-after: always;
   display: flex;
