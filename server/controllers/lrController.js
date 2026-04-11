@@ -157,8 +157,8 @@ html, body {
 
 /* A4 PAGE */
 .page {
-  width: 180mm;
-  height: 170mm;
+  width: 210mm;
+  height: 297mm;
   padding: 8mm;
   page-break-after: always;
   display: flex;
@@ -171,26 +171,27 @@ html, body {
   width: 100%;
   height: 100%;
   border: 1px solid #000;
-  padding: 5mm 6mm;
+  padding: 4mm 5mm;
+
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+
+  /* NEW FIX */
+  justify-content: space-between;
 }
 
 /* TABLE SAFETY */
 table {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 3px;
-  page-break-inside: avoid;
+  margin-bottom: 2px; /* reduced */
 }
 
 tr, td, th {
   border: 1px solid #000;
-  padding: 3px 5px;
-  font-size: 8px;
-  line-height: 1.3;
-  page-break-inside: avoid;
+  padding: 2px 4px;   /* reduced */
+  font-size: 7.5px;   /* reduced */
+  line-height: 1.2;   /* tighter */
 }
 
     /* ── Header section ── */
