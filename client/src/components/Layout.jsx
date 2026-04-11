@@ -88,8 +88,25 @@ export default function Layout() {
       </aside>
 
       <button onClick={() => setMobileOpen(o => !o)}
-        style={{ display:"none", position:"fixed", top:12, left:12, zIndex:2000, background:S.bg, border:`1px solid ${S.border}`, borderRadius:8, padding:"8px 11px", cursor:"pointer", color:S.text, fontSize:18 }}
-        className="ds-hamburger">☰</button>
+        style={{ 
+          display: "none",
+          position: "fixed", 
+          top: 12, 
+          left: 12, 
+          zIndex: 2000, 
+          background: S.bg, 
+          border: `1px solid ${S.border}`, 
+          borderRadius: 8, 
+          padding: "8px 11px", 
+          cursor: "pointer", 
+          color: S.text, 
+          fontSize: 18,
+          alignItems: "center",
+          justifyContent: "center"
+        }}
+        className="ds-hamburger">
+        ☰
+      </button>
 
       {mobileOpen && (
         <div style={{ position:"fixed", inset:0, zIndex:1999, display:"flex" }}>
@@ -103,8 +120,19 @@ export default function Layout() {
       </main>
 
       <style>{`
-        @media(max-width:768px){.ds-sidebar{display:none!important;}.ds-hamburger{display:flex!important;}}
-        @keyframes spin{to{transform:rotate(360deg)}}
+        @media (max-width: 768px) {
+          .ds-sidebar {
+            display: none !important;
+          }
+          .ds-hamburger {
+            display: flex !important;
+          }
+        }
+        @keyframes spin {
+          to {
+            transform: rotate(360deg);
+          }
+        }
       `}</style>
     </div>
   );
