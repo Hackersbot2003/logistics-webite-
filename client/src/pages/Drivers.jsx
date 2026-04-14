@@ -222,6 +222,8 @@ function ViewModal({ driver, onClose }) {
                 {driver.photoUrls?.map((url,i) => <DocLink key={i} label={`Photo ${i+1}`} url={url} />)}
                 {driver.aadharUrls?.map((url,i) => <DocLink key={i} label={`Aadhar Card ${i+1}`} url={url} />)}
                 {driver.licenseUrls?.map((url,i) => <DocLink key={i} label={`License ${i+1}`} url={url} />)}
+                 {driver.tokenUrls?.map((url,i) => <DocLink key={i} label={`Token ${i+1}`} url={url} />)}
+
                 {driver.pdfUrl && (
                   <div style={{ gridColumn:"1/-1", background:"#F8FAFC", border:`1px solid ${C.border}`, borderRadius:8, padding:12 }}>
                     <div style={{ fontSize:12, color:C.faint, marginBottom:6 }}>Combined PDF:</div>
