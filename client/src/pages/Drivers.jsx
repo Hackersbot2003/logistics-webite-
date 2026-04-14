@@ -403,6 +403,13 @@ function DriverFormModal({ driver, onClose, onSaved }) {
     else if (!/^\d{12}$/.test(form.aadharNo)) e.aadharNo = "Must be 12 digits";
     if (!form.licenseNo.trim())       e.licenseNo = "Required";
     if (!form.licenseValidity)        e.licenseValidity = "Required";
+    if (!form.senderName.trim()) e.senderName = "Required";
+
+if (!form.senderContact.trim()) e.senderContact = "Required";
+else if (!/^\d{10}$/.test(form.senderContact))
+    e.senderContact = "Must be 10 digits";
+
+if (!form.inchargeName.trim()) e.inchargeName = "Required";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -414,7 +421,33 @@ function DriverFormModal({ driver, onClose, onSaved }) {
     rmSetter(p => [...p, id]);
   };
 
+  const validateDocuments = () => {
+  if ((photos.length + exPhotos.urls.length - rmPhotos.length) === 0) {
+    toast.error("At least 1 Photo is required");
+    return false;
+  }
+
+  if ((aadharDocs.length + exAadhar.urls.length - rmAadhar.length) === 0) {
+    toast.error("At least 1 Aadhar document is required");
+    return false;
+  }
+
+  if ((licenseDocs.length + exLicense.urls.length - rmLicense.length) === 0) {
+    toast.error("At least 1 License document is required");
+    return false;
+  }
+
+  // ✅ NEW (Extra Docs compulsory)
+  if (extraDocs.length === 0) {
+    toast.error("At least 1 Extra Document (Token) is required");
+    return false;
+  }
+
+  return true;
+};
+
   const handleSubmit = async () => {
+     if (!validateDocuments()) return; 
     setSaving(true);
     try {
       const fd = new FormData();
