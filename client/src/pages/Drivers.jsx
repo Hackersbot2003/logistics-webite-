@@ -222,7 +222,12 @@ function ViewModal({ driver, onClose }) {
                 {driver.photoUrls?.map((url,i) => <DocLink key={i} label={`Photo ${i+1}`} url={url} />)}
                 {driver.aadharUrls?.map((url,i) => <DocLink key={i} label={`Aadhar Card ${i+1}`} url={url} />)}
                 {driver.licenseUrls?.map((url,i) => <DocLink key={i} label={`License ${i+1}`} url={url} />)}
+<<<<<<< HEAD
                 {driver.tokenUrls?.map((url,i) => <DocLink key={i} label={`Token Card ${i+1}`} url={url} />)}
+=======
+                 {driver.tokenUrls?.map((url,i) => <DocLink key={i} label={`Token ${i+1}`} url={url} />)}
+
+>>>>>>> 62c94304b2574824d3fbe4bab2fce0659fbf8a50
                 {driver.pdfUrl && (
                   <div style={{ gridColumn:"1/-1", background:"#F8FAFC", border:`1px solid ${C.border}`, borderRadius:8, padding:12 }}>
                     <div style={{ fontSize:12, color:C.faint, marginBottom:6 }}>Combined PDF:</div>
@@ -406,10 +411,20 @@ function DriverFormModal({ driver, onClose, onSaved }) {
     else if (!/^\d{12}$/.test(form.aadharNo)) e.aadharNo = "Must be 12 digits";
     if (!form.licenseNo.trim())       e.licenseNo = "Required";
     if (!form.licenseValidity)        e.licenseValidity = "Required";
+<<<<<<< HEAD
     if (!form.senderName.trim())      e.senderName = "Required";
     if (!form.senderContact.trim())   e.senderContact = "Required";
     else if (!/^\d{10}$/.test(form.senderContact)) e.senderContact = "Must be 10 digits";
     if (!form.inchargeName.trim())    e.inchargeName = "Required";
+=======
+    if (!form.senderName.trim()) e.senderName = "Required";
+
+if (!form.senderContact.trim()) e.senderContact = "Required";
+else if (!/^\d{10}$/.test(form.senderContact))
+    e.senderContact = "Must be 10 digits";
+
+if (!form.inchargeName.trim()) e.inchargeName = "Required";
+>>>>>>> 62c94304b2574824d3fbe4bab2fce0659fbf8a50
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -421,7 +436,33 @@ function DriverFormModal({ driver, onClose, onSaved }) {
     rmSetter(p => [...p, id]);
   };
 
+  const validateDocuments = () => {
+  if ((photos.length + exPhotos.urls.length - rmPhotos.length) === 0) {
+    toast.error("At least 1 Photo is required");
+    return false;
+  }
+
+  if ((aadharDocs.length + exAadhar.urls.length - rmAadhar.length) === 0) {
+    toast.error("At least 1 Aadhar document is required");
+    return false;
+  }
+
+  if ((licenseDocs.length + exLicense.urls.length - rmLicense.length) === 0) {
+    toast.error("At least 1 License document is required");
+    return false;
+  }
+
+  // ✅ NEW (Extra Docs compulsory)
+  if (extraDocs.length === 0) {
+    toast.error("At least 1 Extra Document (Token) is required");
+    return false;
+  }
+
+  return true;
+};
+
   const handleSubmit = async () => {
+<<<<<<< HEAD
     // Validate: each category must have at least 1 doc (existing or new)
     const totalPhotos  = exPhotos.urls.length  + photos.length;
     const totalAadhar  = exAadhar.urls.length  + aadharDocs.length;
@@ -431,6 +472,9 @@ function DriverFormModal({ driver, onClose, onSaved }) {
       toast.error("Please upload at least 1 document in each category (Photo, Aadhar, License, Token Card)");
       return;
     }
+=======
+     if (!validateDocuments()) return; 
+>>>>>>> 62c94304b2574824d3fbe4bab2fce0659fbf8a50
     setSaving(true);
     try {
       const fd = new FormData();

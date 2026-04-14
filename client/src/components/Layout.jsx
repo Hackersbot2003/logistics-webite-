@@ -67,7 +67,7 @@ export default function Layout() {
             {user?.role}
           </span>
         </div>
-        {hasRole("superadmin","admin") && (
+        {hasRole("superadmin") && (
           <button onClick={() => navigate("/users")}
             style={{ width:"100%", padding:"7px", background:"rgba(37,99,235,0.15)", border:`1px solid rgba(37,99,235,0.3)`, borderRadius:7, color:"#60A5FA", fontSize:12, cursor:"pointer", fontWeight:600, marginBottom:6 }}>
             Register User
