@@ -49,16 +49,15 @@ export default function DriverForm() {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(isEdit);
 
+  // Image state
   const [existingPhotos, setExistingPhotos] = useState({ urls: [], ids: [] });
   const [existingAadhar, setExistingAadhar] = useState({ urls: [], ids: [] });
   const [existingLicense, setExistingLicense] = useState({ urls: [], ids: [] });
   const [existingToken, setExistingToken] = useState({ urls: [], ids: [] });
-
   const [newPhotos, setNewPhotos] = useState([]);
   const [newAadhar, setNewAadhar] = useState([]);
   const [newLicense, setNewLicense] = useState([]);
   const [newToken, setNewToken] = useState([]);
-
   const [removePhotos, setRemovePhotos] = useState([]);
   const [removeAadhar, setRemoveAadhar] = useState([]);
   const [removeLicense, setRemoveLicense] = useState([]);
@@ -72,31 +71,20 @@ export default function DriverForm() {
       try {
         const { data } = await api.get(`/drivers/${id}`);
         const d = data.driver;
-
         setForm({
-          fullName: d.fullName || "",
-          fatherName: d.fatherName || "",
-          phoneNumber: d.phoneNumber || "",
-          dateOfBirth: d.dateOfBirth || "",
-          maritalStatus: d.maritalStatus || "",
-          temporaryAddress: d.temporaryAddress || "",
-          permanentAddress: d.permanentAddress || "",
-          emergencyRelation: d.emergencyRelation || "",
-          emergencyPerson: d.emergencyPerson || "",
-          emergencyContact: d.emergencyContact || "",
-          aadharNo: d.aadharNo || "",
-          licenseNo: d.licenseNo || "",
-          licenseValidity: d.licenseValidity || "",
-          senderName: d.senderName || "",
-          senderContact: d.senderContact || "",
-          inchargeName: d.inchargeName || "",
+          fullName: d.fullName || "", fatherName: d.fatherName || "",
+          phoneNumber: d.phoneNumber || "", dateOfBirth: d.dateOfBirth || "",
+          maritalStatus: d.maritalStatus || "", temporaryAddress: d.temporaryAddress || "",
+          permanentAddress: d.permanentAddress || "", emergencyRelation: d.emergencyRelation || "",
+          emergencyPerson: d.emergencyPerson || "", emergencyContact: d.emergencyContact || "",
+          aadharNo: d.aadharNo || "", licenseNo: d.licenseNo || "",
+          licenseValidity: d.licenseValidity || "", senderName: d.senderName || "",
+          senderContact: d.senderContact || "", inchargeName: d.inchargeName || "",
         });
-
         setExistingPhotos({ urls: d.photoUrls || [], ids: d.photoDriveIds || [] });
         setExistingAadhar({ urls: d.aadharUrls || [], ids: d.aadharDriveIds || [] });
         setExistingLicense({ urls: d.licenseUrls || [], ids: d.licenseDriveIds || [] });
         setExistingToken({ urls: d.tokenUrls || [], ids: d.tokenDriveIds || [] });
-
       } catch {
         toast.error("Failed to load driver");
         navigate("/");
@@ -106,13 +94,7 @@ export default function DriverForm() {
     })();
   }, [id, isEdit, navigate]);
 
-  const handleChange = (e) =>
-    setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
-
-  const handleSenderContactChange = (e) => {
-    const val = e.target.value.replace(/\D/g, ""); // only digits
-    setForm((p) => ({ ...p, senderContact: val }));
-  };
+  const handleChange = (e) => setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
 
   const removeExisting = (setter, removeSetter) => (driveId) => {
     setter((p) => ({
@@ -124,13 +106,6 @@ export default function DriverForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // ✅ frontend validation
-    if (!form.senderName.trim()) return toast.error("Sender Name required");
-    if (!form.senderContact.trim()) return toast.error("Sender Contact required");
-    if (!/^\d{10}$/.test(form.senderContact)) return toast.error("Sender Contact must be 10 digits");
-    if (!form.inchargeName.trim()) return toast.error("Incharge Name required");
-
     setLoading(true);
     setUploadProgress(0);
 
@@ -150,11 +125,17 @@ export default function DriverForm() {
         fd.append("removeToken", JSON.stringify(removeToken));
       }
 
+      const config = {
+        onUploadProgress: (e) => {
+          setUploadProgress(Math.round((e.loaded / e.total) * 100));
+        },
+      };
+
       if (isEdit) {
-        await api.put(`/drivers/${id}`, fd);
+        await api.put(`/drivers/${id}`, fd, config);
         toast.success("Driver updated");
       } else {
-        const { data } = await api.post("/drivers", fd);
+        const { data } = await api.post("/drivers", fd, config);
         toast.success(`Driver created — Token: ${data.driver.tokenNo}`);
       }
 
@@ -163,50 +144,9 @@ export default function DriverForm() {
       toast.error(err.response?.data?.message || "Save failed");
     } finally {
       setLoading(false);
+      setUploadProgress(0);
     }
   };
-
-  if (fetching) return <div>Loading...</div>;
-
-  return (
-    <form onSubmit={handleSubmit}>
-      
-      {/* ✅ UPDATED SECTION */}
-      <Field label="Sender Name *">
-        <input
-          name="senderName"
-          value={form.senderName}
-          onChange={handleChange}
-          required
-          style={inputStyle}
-        />
-      </Field>
-
-      <Field label="Sender Contact *">
-        <input
-          name="senderContact"
-          value={form.senderContact}
-          onChange={handleSenderContactChange}
-          required
-          maxLength={10}
-          style={inputStyle}
-        />
-      </Field>
-
-      <Field label="Incharge Name *">
-        <input
-          name="inchargeName"
-          value={form.inchargeName}
-          onChange={handleChange}
-          required
-          style={inputStyle}
-        />
-      </Field>
-
-      <button type="submit">Submit</button>
-    </form>
-  );
-}
 
   if (fetching) return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh" }}>
