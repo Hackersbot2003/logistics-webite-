@@ -207,28 +207,23 @@ const updateDriver = async (req, res) => {
     const body = req.body;
     const files = req.files || {};
 
-<<<<<<< HEAD
-=======
-    // Parse remove arrays
->>>>>>> 62c94304b2574824d3fbe4bab2fce0659fbf8a50
+
     const removePhotos = JSON.parse(body.removePhotos || "[]");
     const removeAadhar = JSON.parse(body.removeAadhar || "[]");
     const removeLicense = JSON.parse(body.removeLicense || "[]");
     const removeToken = JSON.parse(body.removeToken || "[]");
 
-<<<<<<< HEAD
+
     // 🗑️ delete removed files from drive
     const deleteAll = [...removePhotos, ...removeAadhar, ...removeLicense, ...removeToken];
     await Promise.allSettled(deleteAll.map(deleteFileFromDrive));
 
-    // 📤 upload new files
-=======
+
     // Delete removed files from Drive
     const deleteAll = [...removePhotos, ...removeAadhar, ...removeLicense, ...removeToken];
     await Promise.allSettled(deleteAll.map(deleteFileFromDrive));
 
     // Upload new files
->>>>>>> 62c94304b2574824d3fbe4bab2fce0659fbf8a50
     const [photoRes, aadharRes, licenseRes, tokenRes] = await Promise.all([
       uploadImageGroup(files.photos || [], "photos", driver.tokenNo),
       uploadImageGroup(files.aadhar || [], "aadhar", driver.tokenNo),
@@ -236,11 +231,6 @@ const updateDriver = async (req, res) => {
       uploadImageGroup(files.token || [], "token", driver.tokenNo),
     ]);
 
-<<<<<<< HEAD
-    // 🔗 merge logic
-=======
-    // Merge helper
->>>>>>> 62c94304b2574824d3fbe4bab2fce0659fbf8a50
     const mergeUrls = (existing, existingIds, removeIds, newUrls, newIds) => {
       const keepIdxs = existingIds
         .map((id, i) => (removeIds.includes(id) ? -1 : i))
@@ -258,11 +248,6 @@ const updateDriver = async (req, res) => {
     const mergedLicense = mergeUrls(driver.licenseUrls, driver.licenseDriveIds, removeLicense, licenseRes.urls, licenseRes.driveIds);
     const mergedToken = mergeUrls(driver.tokenUrls, driver.tokenDriveIds, removeToken, tokenRes.urls, tokenRes.driveIds);
 
-<<<<<<< HEAD
-    // ✅ BUILD FULL BUFFERS (existing + new)
-=======
-    // ✅ BUILD ALL BUFFERS (existing + new)
->>>>>>> 62c94304b2574824d3fbe4bab2fce0659fbf8a50
     const allBuffers = {
       photos: [
         ...(await fetchBuffersFromDrive(mergedPhotos.urls)),
@@ -282,11 +267,6 @@ const updateDriver = async (req, res) => {
       ],
     };
 
-<<<<<<< HEAD
-    // ✅ check if any docs exist
-=======
-    // Check if any document exists
->>>>>>> 62c94304b2574824d3fbe4bab2fce0659fbf8a50
     const hasAnyDocs =
       mergedPhotos.urls.length ||
       mergedAadhar.urls.length ||
@@ -296,11 +276,6 @@ const updateDriver = async (req, res) => {
     let pdfUrl = driver.pdfUrl;
     let pdfDriveId = driver.pdfDriveId;
 
-<<<<<<< HEAD
-    // 📄 regenerate PDF correctly
-=======
-    // Generate new PDF
->>>>>>> 62c94304b2574824d3fbe4bab2fce0659fbf8a50
     if (hasAnyDocs) {
       const pdfBuffer = await generateDriverPdf(allBuffers, {
         fullName: driver.fullName,
@@ -312,11 +287,6 @@ const updateDriver = async (req, res) => {
       pdfDriveId = pdfResult.id;
     }
 
-<<<<<<< HEAD
-    // 🧾 allowed fields update
-=======
-    // Allowed fields update
->>>>>>> 62c94304b2574824d3fbe4bab2fce0659fbf8a50
     const allowedFields = [
       "fullName", "fatherName", "phoneNumber", "temporaryAddress", "permanentAddress",
       "dateOfBirth", "maritalStatus", "emergencyRelation", "emergencyPerson", "emergencyContact",
