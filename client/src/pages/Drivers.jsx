@@ -216,12 +216,13 @@ function ViewModal({ driver, onClose }) {
             <Row label="Token No" value={driver.tokenNo} />
           </G3></CardBody></Card>
           
-          {(driver.photoUrls?.length > 0 || driver.aadharUrls?.length > 0 || driver.licenseUrls?.length > 0 || driver.pdfUrl) && (
+          {(driver.photoUrls?.length > 0 || driver.aadharUrls?.length > 0 || driver.licenseUrls?.length > 0 || driver.tokenUrls?.length > 0 || driver.pdfUrl) && (
             <Card><SecHdr icon="📄" title="Documents" /><CardBody>
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
                 {driver.photoUrls?.map((url,i) => <DocLink key={i} label={`Photo ${i+1}`} url={url} />)}
                 {driver.aadharUrls?.map((url,i) => <DocLink key={i} label={`Aadhar Card ${i+1}`} url={url} />)}
                 {driver.licenseUrls?.map((url,i) => <DocLink key={i} label={`License ${i+1}`} url={url} />)}
+                {driver.tokenUrls?.map((url,i) => <DocLink key={i} label={`Token Card ${i+1}`} url={url} />)}
                 {driver.pdfUrl && (
                   <div style={{ gridColumn:"1/-1", background:"#F8FAFC", border:`1px solid ${C.border}`, borderRadius:8, padding:12 }}>
                     <div style={{ fontSize:12, color:C.faint, marginBottom:6 }}>Combined PDF:</div>
@@ -363,9 +364,11 @@ function DriverFormModal({ driver, onClose, onSaved }) {
   const [exPhotos,  setExPhotos]    = useState({ urls: driver?.photoUrls||[], ids: driver?.photoDriveIds||[] });
   const [exAadhar,  setExAadhar]    = useState({ urls: driver?.aadharUrls||[], ids: driver?.aadharDriveIds||[] });
   const [exLicense, setExLicense]   = useState({ urls: driver?.licenseUrls||[], ids: driver?.licenseDriveIds||[] });
+  const [exToken,   setExToken]     = useState({ urls: driver?.tokenUrls||[], ids: driver?.tokenDriveIds||[] });
   const [rmPhotos,  setRmPhotos]    = useState([]);
   const [rmAadhar,  setRmAadhar]    = useState([]);
   const [rmLicense, setRmLicense]   = useState([]);
+  const [rmToken,   setRmToken]     = useState([]);
 
   // KEY: stable onChange — uses functional update, doesn't recreate on every render
   const handleChange = useCallback((e) => {
@@ -403,6 +406,10 @@ function DriverFormModal({ driver, onClose, onSaved }) {
     else if (!/^\d{12}$/.test(form.aadharNo)) e.aadharNo = "Must be 12 digits";
     if (!form.licenseNo.trim())       e.licenseNo = "Required";
     if (!form.licenseValidity)        e.licenseValidity = "Required";
+    if (!form.senderName.trim())      e.senderName = "Required";
+    if (!form.senderContact.trim())   e.senderContact = "Required";
+    else if (!/^\d{10}$/.test(form.senderContact)) e.senderContact = "Must be 10 digits";
+    if (!form.inchargeName.trim())    e.inchargeName = "Required";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -415,6 +422,15 @@ function DriverFormModal({ driver, onClose, onSaved }) {
   };
 
   const handleSubmit = async () => {
+    // Validate: each category must have at least 1 doc (existing or new)
+    const totalPhotos  = exPhotos.urls.length  + photos.length;
+    const totalAadhar  = exAadhar.urls.length  + aadharDocs.length;
+    const totalLicense = exLicense.urls.length + licenseDocs.length;
+    const totalToken   = exToken.urls.length   + extraDocs.length;
+    if (!totalPhotos || !totalAadhar || !totalLicense || !totalToken) {
+      toast.error("Please upload at least 1 document in each category (Photo, Aadhar, License, Token Card)");
+      return;
+    }
     setSaving(true);
     try {
       const fd = new FormData();
@@ -427,7 +443,7 @@ function DriverFormModal({ driver, onClose, onSaved }) {
         fd.append("removePhotos", JSON.stringify(rmPhotos));
         fd.append("removeAadhar", JSON.stringify(rmAadhar));
         fd.append("removeLicense", JSON.stringify(rmLicense));
-        fd.append("removeToken", JSON.stringify([]));
+        fd.append("removeToken", JSON.stringify(rmToken));
         await api.put(`/drivers/${driver._id}`, fd);
         toast.success("Driver updated successfully");
         onSaved();
@@ -541,14 +557,14 @@ function DriverFormModal({ driver, onClose, onSaved }) {
                 {/* Reference */}
                 <Card><SecHdr icon="📋" title="Reference" /><CardBody>
                   <G3>
-                    <FldWithLabel label="Sender Name">
-                      <input name="senderName" value={form.senderName} onChange={handleChange} style={INP} autoComplete="off" />
+                    <FldWithLabel label="Sender Name" req error={errors.senderName}>
+                      <input name="senderName" value={form.senderName} onChange={handleChange} style={bord("senderName")} autoComplete="off" />
                     </FldWithLabel>
-                    <FldWithLabel label="Sender Contact">
-                      <input name="senderContact" value={form.senderContact} onChange={handleChange} style={INP} autoComplete="off" />
+                    <FldWithLabel label="Sender Contact" req error={errors.senderContact}>
+                      <input name="senderContact" value={form.senderContact} onChange={handleChange} style={bord("senderContact")} maxLength={10} placeholder="10 digits" autoComplete="off" />
                     </FldWithLabel>
-                    <FldWithLabel label="Incharge Name">
-                      <input name="inchargeName" value={form.inchargeName} onChange={handleChange} style={INP} autoComplete="off" />
+                    <FldWithLabel label="Incharge Name" req error={errors.inchargeName}>
+                      <input name="inchargeName" value={form.inchargeName} onChange={handleChange} style={bord("inchargeName")} autoComplete="off" />
                     </FldWithLabel>
                   </G3>
                 </CardBody></Card>
@@ -556,27 +572,30 @@ function DriverFormModal({ driver, onClose, onSaved }) {
             ) : (
               /* Step 2 */
               <Card><SecHdr icon="📄" title="Upload Documents" /><CardBody>
+                <p style={{ fontSize:12, color:C.muted, marginBottom:12, marginTop:-4 }}>
+                  Each category requires at least 1 document. A PDF will be generated from all uploaded images.
+                </p>
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
-                  <DocCard label="Photo"
+                  <DocCard label="Photo *"
                     files={photos} existingUrls={exPhotos.urls} existingIds={exPhotos.ids}
                     onAdd={f => setPhotos(p=>[...p,f])}
                     onRemoveNew={i => setPhotos(p=>p.filter((_,j)=>j!==i))}
                     onRemoveExisting={removeEx(setExPhotos, setRmPhotos)} />
-                  <DocCard label="Aadhar"
+                  <DocCard label="Aadhar *"
                     files={aadharDocs} existingUrls={exAadhar.urls} existingIds={exAadhar.ids}
                     onAdd={f => setAadharDocs(p=>[...p,f])}
                     onRemoveNew={i => setAadharDocs(p=>p.filter((_,j)=>j!==i))}
                     onRemoveExisting={removeEx(setExAadhar, setRmAadhar)} />
-                  <DocCard label="License"
+                  <DocCard label="License *"
                     files={licenseDocs} existingUrls={exLicense.urls} existingIds={exLicense.ids}
                     onAdd={f => setLicenseDocs(p=>[...p,f])}
                     onRemoveNew={i => setLicenseDocs(p=>p.filter((_,j)=>j!==i))}
                     onRemoveExisting={removeEx(setExLicense, setRmLicense)} />
-                  <DocCard label="Extra Documents"
-                    files={extraDocs} existingUrls={[]} existingIds={[]}
+                  <DocCard label="Token Card *"
+                    files={extraDocs} existingUrls={exToken.urls} existingIds={exToken.ids}
                     onAdd={f => setExtraDocs(p=>[...p,f])}
                     onRemoveNew={i => setExtraDocs(p=>p.filter((_,j)=>j!==i))}
-                    onRemoveExisting={()=>{}} />
+                    onRemoveExisting={removeEx(setExToken, setRmToken)} />
                 </div>
               </CardBody></Card>
             )}

@@ -106,6 +106,27 @@ export default function DriverForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validate required fields
+    const errors = [];
+    if (!form.senderName.trim())    errors.push("Sender Name is required");
+    if (!form.senderContact.trim()) errors.push("Sender Contact is required");
+    else if (!/^\d{10}$/.test(form.senderContact)) errors.push("Sender Contact must be exactly 10 digits");
+    if (!form.inchargeName.trim())  errors.push("Incharge Name is required");
+
+    // Validate documents (at least 1 each, create mode only)
+    if (!isEdit) {
+      if (!newPhotos.length)  errors.push("At least 1 Photograph is required");
+      if (!newAadhar.length)  errors.push("At least 1 Aadhar document is required");
+      if (!newLicense.length) errors.push("At least 1 License document is required");
+      if (!newToken.length)   errors.push("At least 1 Token Card document is required");
+    }
+
+    if (errors.length) {
+      errors.forEach(msg => toast.error(msg));
+      return;
+    }
+
     setLoading(true);
     setUploadProgress(0);
 
@@ -255,14 +276,19 @@ export default function DriverForm() {
           <SectionTitle icon="📋">Document Details</SectionTitle>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
             {[
-              ["aadharNo", "Aadhar Number"], ["licenseNo", "License Number"],
-              ["licenseValidity", "License Validity"], ["senderName", "Sender Name"],
-              ["senderContact", "Sender Contact"], ["inchargeName", "Incharge Name"],
-            ].map(([name, label]) => (
-              <Field key={name} label={label}>
+              ["aadharNo", "Aadhar Number", "text", false],
+              ["licenseNo", "License Number", "text", false],
+              ["licenseValidity", "License Validity", "date", false],
+              ["senderName", "Sender Name *", "text", true],
+              ["senderContact", "Sender Contact * (10 digits)", "text", true],
+              ["inchargeName", "Incharge Name *", "text", true],
+            ].map(([name, label, type, req]) => (
+              <Field key={name} label={<span>{label.replace(" *","")}{req && <span style={{ color:"#EF4444" }}> *</span>}</span>}>
                 <input name={name} value={form[name]} onChange={handleChange}
-                  type={name === "licenseValidity" ? "date" : "text"}
-                  style={{ ...inputStyle, ...(name === "licenseValidity" ? { colorScheme: "dark" } : {}) }}
+                  type={type}
+                  maxLength={name === "senderContact" ? 10 : undefined}
+                  placeholder={name === "senderContact" ? "10 digits" : undefined}
+                  style={{ ...inputStyle, ...(type === "date" ? { colorScheme: "dark" } : {}) }}
                   onFocus={(e) => e.target.style.borderColor = "rgba(245,158,11,0.5)"}
                   onBlur={(e) => e.target.style.borderColor = "#2A3347"}
                 />
