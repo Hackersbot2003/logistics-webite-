@@ -219,9 +219,6 @@ const updateDriver = async (req, res) => {
     await Promise.allSettled(deleteAll.map(deleteFileFromDrive));
 
 
-    // Delete removed files from Drive
-    const deleteAll = [...removePhotos, ...removeAadhar, ...removeLicense, ...removeToken];
-    await Promise.allSettled(deleteAll.map(deleteFileFromDrive));
 
     // Upload new files
     const [photoRes, aadharRes, licenseRes, tokenRes] = await Promise.all([
