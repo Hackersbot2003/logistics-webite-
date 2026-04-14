@@ -31,7 +31,7 @@ function htmlToPdfBuffer(html) {
 // ── Helper: Get Local Logo as Base64 ──────────────────────────────────────────
 function getLocalLogoBase64() {
   try {
-    const logoPath = path.join(__dirname, './assets/horselogo.jpg');
+    const logoPath = path.join(__dirname, '../assets/horselogo.jpg');
     if (!fs.existsSync(logoPath)) {
       logger.warn(`Logo not found at ${logoPath}, using fallback emoji.`);
       return null;
@@ -128,7 +128,7 @@ exports.generateLR = async (req, res) => {
     }
 
     // Use Google Drive logo instead of local logo
-    const logoUrl = 'https://drive.google.com/uc?export=view&id=19sFFY_zHQn1mVQwoDpqBEa9kULpviw6E';
+ const logoBase64 = getLocalLogoBase64();
 
     // Generate multiple copies if requested
     const requestedCopies = copies || 'original';
@@ -139,7 +139,7 @@ exports.generateLR = async (req, res) => {
       const copyTypes = ['ORIGINAL', 'DUPLICATE', 'TRIPLICATE'];
       
       for (let i = 0; i < copyTypes.length; i++) {
-        const copyHtml = await buildLRHtml(vehicle, signatureDataUrl, logoUrl, copyTypes[i]);
+        const copyHtml = await buildLRHtml(vehicle, signatureDataUrl, logoBase64, copyTypes[i]);
         htmlContent += copyHtml;
         if (i < copyTypes.length - 1) {
           htmlContent += '<div style="page-break-after: always;"></div>'; // Page break between copies
@@ -148,7 +148,7 @@ exports.generateLR = async (req, res) => {
     } else {
       // Generate single copy with specified type
       const copyType = requestedCopies.toUpperCase();
-      htmlContent = await buildLRHtml(vehicle, signatureDataUrl, logoUrl, copyType);
+      htmlContent = await buildLRHtml(vehicle, signatureDataUrl, logoBase64, copyType);
     }
 
     if (!htmlContent || typeof htmlContent !== 'string' || htmlContent.trim() === '') {
