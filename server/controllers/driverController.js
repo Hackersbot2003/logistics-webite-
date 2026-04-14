@@ -3,6 +3,7 @@ const { uploadFileToDrive, deleteFileFromDrive, uploadPdfToDrive } = require("..
 const { generateDriverPdf } = require("../services/pdfService");
 const { queueSheetAppend, queueSheetUpdate, queueSheetDelete } = require("../services/queueService");
 const logger = require("../config/logger");
+const fetch = require("node-fetch");
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -175,6 +176,29 @@ const getDriver = async (req, res) => {
  * PUT /api/drivers/:id
  * Update driver details and optionally add/replace images
  */
+
+
+const fetchBuffersFromDrive = async (urls = []) => {
+  const buffers = [];
+
+  for (const url of urls) {
+    try {
+      const fileIdMatch = url.match(/[-\w]{25,}/);
+      const directUrl = fileIdMatch
+        ? `https://drive.google.com/uc?id=${fileIdMatch[0]}`
+        : url;
+
+      const res = await fetch(directUrl);
+      const buffer = await res.buffer();
+      buffers.push(buffer);
+    } catch (err) {
+      console.log("Error fetching file:", url);
+    }
+  }
+
+  return buffers;
+};
+
 const updateDriver = async (req, res) => {
   try {
     const driver = await Driver.findById(req.params.id);
@@ -183,18 +207,17 @@ const updateDriver = async (req, res) => {
     const body = req.body;
     const files = req.files || {};
 
-    // Parse which existing images the user wants to REMOVE
-    // Frontend sends: removePhotos=["driveId1","driveId2"]
+    // Parse remove arrays
     const removePhotos = JSON.parse(body.removePhotos || "[]");
     const removeAadhar = JSON.parse(body.removeAadhar || "[]");
     const removeLicense = JSON.parse(body.removeLicense || "[]");
     const removeToken = JSON.parse(body.removeToken || "[]");
 
-    // Delete removed images from Drive
+    // Delete removed files from Drive
     const deleteAll = [...removePhotos, ...removeAadhar, ...removeLicense, ...removeToken];
     await Promise.allSettled(deleteAll.map(deleteFileFromDrive));
 
-    // Upload new images
+    // Upload new files
     const [photoRes, aadharRes, licenseRes, tokenRes] = await Promise.all([
       uploadImageGroup(files.photos || [], "photos", driver.tokenNo),
       uploadImageGroup(files.aadhar || [], "aadhar", driver.tokenNo),
@@ -202,81 +225,104 @@ const updateDriver = async (req, res) => {
       uploadImageGroup(files.token || [], "token", driver.tokenNo),
     ]);
 
-    // Merge: remove deleted, append new
+    // Merge helper
     const mergeUrls = (existing, existingIds, removeIds, newUrls, newIds) => {
       const keepIdxs = existingIds
         .map((id, i) => (removeIds.includes(id) ? -1 : i))
         .filter((i) => i !== -1);
+
       return {
-        urls: [...keepIdxs.map((i) => existing[i]), ...newUrls].slice(0, 5),
-        ids: [...keepIdxs.map((i) => existingIds[i]), ...newIds].slice(0, 5),
+        urls: [...keepIdxs.map((i) => existing[i]), ...newUrls],
+        ids: [...keepIdxs.map((i) => existingIds[i]), ...newIds],
       };
     };
 
+    // Merge all categories
     const mergedPhotos = mergeUrls(driver.photoUrls, driver.photoDriveIds, removePhotos, photoRes.urls, photoRes.driveIds);
     const mergedAadhar = mergeUrls(driver.aadharUrls, driver.aadharDriveIds, removeAadhar, aadharRes.urls, aadharRes.driveIds);
     const mergedLicense = mergeUrls(driver.licenseUrls, driver.licenseDriveIds, removeLicense, licenseRes.urls, licenseRes.driveIds);
     const mergedToken = mergeUrls(driver.tokenUrls, driver.tokenDriveIds, removeToken, tokenRes.urls, tokenRes.driveIds);
 
-    // Re-generate PDF if any image changes happened
-    const imagesChanged =
-      files.photos?.length > 0 || files.aadhar?.length > 0 ||
-      files.license?.length > 0 || files.token?.length > 0 ||
-      deleteAll.length > 0;
+    // ✅ BUILD ALL BUFFERS (existing + new)
+    const allBuffers = {
+      photos: [
+        ...(await fetchBuffersFromDrive(mergedPhotos.urls)),
+        ...(files.photos || []).map(f => f.buffer),
+      ],
+      aadhar: [
+        ...(await fetchBuffersFromDrive(mergedAadhar.urls)),
+        ...(files.aadhar || []).map(f => f.buffer),
+      ],
+      license: [
+        ...(await fetchBuffersFromDrive(mergedLicense.urls)),
+        ...(files.license || []).map(f => f.buffer),
+      ],
+      token: [
+        ...(await fetchBuffersFromDrive(mergedToken.urls)),
+        ...(files.token || []).map(f => f.buffer),
+      ],
+    };
+
+    // Check if any document exists
+    const hasAnyDocs =
+      mergedPhotos.urls.length ||
+      mergedAadhar.urls.length ||
+      mergedLicense.urls.length ||
+      mergedToken.urls.length;
 
     let pdfUrl = driver.pdfUrl;
     let pdfDriveId = driver.pdfDriveId;
 
-    if (imagesChanged) {
-      // We need to re-fetch image buffers from Drive or use newly uploaded ones
-      // For regeneration, use only newly uploaded buffers + placeholder for existing
-      const allBuffers = {
-        photos: (files.photos || []).map((f) => f.buffer),
-        aadhar: (files.aadhar || []).map((f) => f.buffer),
-        license: (files.license || []).map((f) => f.buffer),
-        token: (files.token || []).map((f) => f.buffer),
-      };
+    // Generate new PDF
+    if (hasAnyDocs) {
+      const pdfBuffer = await generateDriverPdf(allBuffers, {
+        fullName: driver.fullName,
+        tokenNo: driver.tokenNo,
+      });
 
-      const hasNew = Object.values(allBuffers).some((g) => g.length > 0);
-      if (hasNew || mergedPhotos.ids.length > 0 || mergedAadhar.ids.length > 0) {
-        const pdfBuffer = await generateDriverPdf(allBuffers, {
-          fullName: driver.fullName,
-          tokenNo: driver.tokenNo,
-        });
-        const pdfResult = await uploadPdfToDrive(pdfBuffer, driver.tokenNo, pdfDriveId);
-        pdfUrl = pdfResult.webViewLink;
-        pdfDriveId = pdfResult.id;
-      }
+      const pdfResult = await uploadPdfToDrive(pdfBuffer, driver.tokenNo, pdfDriveId);
+      pdfUrl = pdfResult.webViewLink;
+      pdfDriveId = pdfResult.id;
     }
 
-    // Build update object from body fields (exclude internal fields)
+    // Allowed fields update
     const allowedFields = [
       "fullName", "fatherName", "phoneNumber", "temporaryAddress", "permanentAddress",
       "dateOfBirth", "maritalStatus", "emergencyRelation", "emergencyPerson", "emergencyContact",
       "aadharNo", "licenseNo", "licenseValidity", "senderName", "senderContact", "inchargeName",
     ];
+
     const updates = {};
-    allowedFields.forEach((f) => { if (body[f] !== undefined) updates[f] = body[f]; });
+    allowedFields.forEach((f) => {
+      if (body[f] !== undefined) updates[f] = body[f];
+    });
 
     const updated = await Driver.findByIdAndUpdate(
       driver._id,
       {
         ...updates,
-        photoUrls: mergedPhotos.urls, photoDriveIds: mergedPhotos.ids,
-        aadharUrls: mergedAadhar.urls, aadharDriveIds: mergedAadhar.ids,
-        licenseUrls: mergedLicense.urls, licenseDriveIds: mergedLicense.ids,
-        tokenUrls: mergedToken.urls, tokenDriveIds: mergedToken.ids,
-        pdfUrl, pdfDriveId,
+        photoUrls: mergedPhotos.urls,
+        photoDriveIds: mergedPhotos.ids,
+        aadharUrls: mergedAadhar.urls,
+        aadharDriveIds: mergedAadhar.ids,
+        licenseUrls: mergedLicense.urls,
+        licenseDriveIds: mergedLicense.ids,
+        tokenUrls: mergedToken.urls,
+        tokenDriveIds: mergedToken.ids,
+        pdfUrl,
+        pdfDriveId,
         updatedBy: req.user._id,
       },
       { new: true }
     );
 
     try { queueSheetUpdate(updated._id.toString()); } catch (_) {}
+
     emit(req, "driver:updated", { driver: updated });
 
     logger.info(`Driver updated: ${updated.tokenNo} by ${req.user.email}`);
     res.json({ message: "Driver updated", driver: updated });
+
   } catch (err) {
     logger.error(`updateDriver error: ${err.message}`);
     res.status(500).json({ message: err.message || "Server error" });
