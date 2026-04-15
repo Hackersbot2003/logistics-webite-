@@ -10,7 +10,7 @@ body {
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
-    font-size: 8px;
+    font-size: 11px;
 }
 
 /* Page container (NO fixed height) */
@@ -86,26 +86,44 @@ table, tr, td, div {
     <div class="page-container">
         <div class="outer-box">
             <div class="challan-container">
-                <!-- Challan Header -->
-                <div class="border border-black mb-2">
-                    <div class="flex items-center justify-between border-b border-black px-4 py-2">
-                        <div class="">
-                            <img src="<%= logoBase64 %>" alt="Company Logo" class="w-12 h-8">
-                        </div>
-                        <div class="flex-grow text-center">
-                            <div class="text-xl font-bold">SHREE AARYA LOGISTICS</div>
-                        </div>
-                        <div class="flex-shrink-0 w-10"></div>
-                    </div>
-                    <div class="text-center text-[14px]  px-4 py-1 border-t border-black">
-                        <div>VIJAY NAGAR, INDORE-M.P.-452010</div>
-                        <div>CONTACT DETAILS : INDORE +91-91111-91111</div>
-                    </div>
-                </div>
+                <div style="border:1px solid black; margin-bottom:6px; padding:6px;">
 
-        <div class="text-center  text-base my-2 border border-black pb-1" style="margin-bottom: 8px;">
-            CONSIGNMENT NOTE CUM CHECK LIST - <%= copyType %>
+    <div style="display:flex; align-items:center; width:100%;">
+
+        <!-- LEFT: Logo -->
+        <div style="width:80px;">
+            <img src="<%= logoBase64 %>" 
+                 style="width:60px; height:40px; object-fit:contain;">
         </div>
+
+        <!-- CENTER: FULL WIDTH TEXT -->
+        <div style="flex-grow:1; text-align:center; line-height:1.2;">
+
+            <div style="font-size:20px; font-weight:bold;">
+                SHREE AARYA LOGISTICS
+            </div>
+
+            <div style="font-size:14px;">
+                VIJAY NAGAR, INDORE-M.P.-452010
+            </div>
+
+            <div style="font-size:14px;">
+                CONTACT DETAILS : INDORE +91-91111-91111
+            </div>
+
+            <div style="font-size:14px; font-weight:600;">
+                CONSIGNMENT NOTE CUM CHECK LIST - <%= copyType %>
+            </div>
+
+        </div>
+
+        <!-- RIGHT: SPACE CONTROL (IMPORTANT) -->
+        <div style="width:80px;"></div>
+
+    </div>
+
+</div>
+
 
         <table class="w-full border-collapse border border-black mb-2 text-sm">
             <tbody>
