@@ -4,335 +4,375 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Challan</title>
-  <style>
-/* Base styles */
-body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    font-size: 11px;
-}
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-/* Page container (NO fixed height) */
-.page-container {
-    width: 100%;
-    padding: 3%;
-    box-sizing: border-box;
-}
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 9px;
+            background: #fff;
+        }
 
-/* Outer box */
-.outer-box {
-    width: 100%;
-    border: 2px solid #000;
-    display: flex;
-    flex-direction: column;
-}
+        .page-container {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 4mm;
+            margin: 0 auto;
+        }
 
-/* Inner content */
-.challan-container {
-    display: flex;
-    flex-direction: column;
-    padding: 2%;
-}
+        .outer-box {
+            width: 100%;
+            border: 2px solid #000;
+        }
 
-/* Tables */
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 6px;
-}
+        .challan-container {
+            padding: 3mm;
+        }
 
-td, th {
-    border: 1px solid #000;
-    padding: 4px;
-    vertical-align: top;
-    font-size: 10px;
-}
+        /* ── HEADER ── */
+        .header-row {
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #000;
+            padding: 2px 4px;
+            gap: 6px;
+        }
 
-/* Utility classes */
-.text-center { text-align: center; }
-.text-right { text-align: right; }
-.font-bold { font-weight: bold; }
-.font-semibold { font-weight: 600; }
+        .header-logo {
+            width: 36px;
+            height: 28px;
+            object-fit: contain;
+            flex-shrink: 0;
+        }
 
-.flex { display: flex; }
-.items-center { align-items: center; }
-.justify-between { justify-content: space-between; }
+        .header-text {
+            flex: 1;
+            text-align: center;
+        }
 
-.w-1\/4 { width: 25%; }
-.w-1\/3 { width: 33.33%; }
-.w-1\/2 { width: 50%; }
+        .header-company {
+            font-size: 13px;
+            font-weight: bold;
+            line-height: 1.2;
+        }
 
-/* Logo responsive */
-.logo {
-    width: 20%;
-    max-height: 50px;
-    object-fit: contain;
-}
+        .header-sub {
+            font-size: 8px;
+            line-height: 1.3;
+        }
 
-/* Prevent breaking inside important blocks */
-table, tr, td, div {
-    page-break-inside: avoid;
-}
+        /* ── TITLE BAR ── */
+        .title-bar {
+            text-align: center;
+            font-size: 10px;
+            font-weight: bold;
+            border: 1px solid #000;
+            padding: 2px;
+            margin: 3px 0;
+        }
 
-/* A4 setup */
-@page {
-    size: A4;
-    margin: 0;
-}
-</style>
+        /* ── TABLES ── */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 3px;
+        }
+
+        td, th {
+            border: 1px solid #000;
+            padding: 2px 3px;
+            vertical-align: top;
+            font-size: 8px;
+        }
+
+        th {
+            background: #e0e0e0;
+            font-size: 8px;
+            text-align: center;
+        }
+
+        .lbl {
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .w25 { width: 25%; }
+        .w33 { width: 33.33%; }
+
+        /* ── SECTION TITLE ── */
+        .section-title {
+            font-weight: bold;
+            font-size: 8px;
+            margin: 3px 0 2px 0;
+        }
+
+        /* ── MISC TEXT ── */
+        .misc-line {
+            font-size: 8px;
+            margin: 2px 0;
+        }
+
+        .italic-note {
+            font-size: 7.5px;
+            font-style: italic;
+            margin: 2px 0;
+        }
+
+        /* ── SIGNATURE TABLE ── */
+        .sig-table td {
+            height: 40px;
+            text-align: center;
+            vertical-align: top;
+            font-size: 8px;
+            font-weight: bold;
+        }
+
+        .sig-table img {
+            max-width: 80px;
+            max-height: 35px;
+            display: block;
+            margin: 0 auto 2px auto;
+        }
+
+        /* ── PRINT ── */
+        @page {
+            size: A4;
+            margin: 0;
+        }
+
+        @media print {
+            body { margin: 0; }
+            .page-container {
+                width: 210mm;
+                padding: 4mm;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="page-container">
-        <div class="outer-box">
-            <div class="challan-container">
-                <!-- Challan Header -->
-                <div class="border border-black mb-2">
-                    <div class="flex items-center justify-between border-b border-black px-4 py-2">
-                        <div class="flex-shrink-0">
-                            <img src="<%= logoBase64 %>" alt="Company Logo" class="w-18 h-10">
-                        </div>
-                        <div class="flex-grow text-center">
-                            <div class="text-[25px] font-bold">SHREE AARYA LOGISTICS</div>
-                        </div>
-                        <div class="flex-shrink-0 w-10"></div>
-                    </div>
-                    <div class="text-center text-[14px]  px-4 py-1 border-t border-black">
-                        <div>VIJAY NAGAR, INDORE-M.P.-452010</div>
-                        <div>CONTACT DETAILS : INDORE +91-91111-91111</div>
-                    </div>
+<div class="page-container">
+    <div class="outer-box">
+        <div class="challan-container">
+
+            <!-- HEADER: logo + company name in same row -->
+            <div class="header-row">
+                <img src="<%= logoBase64 %>" alt="Logo" class="header-logo">
+                <div class="header-text">
+                    <div class="header-company">SHREE AARYA LOGISTICS</div>
+                    <div class="header-sub">VIJAY NAGAR, INDORE-M.P.-452010</div>
+                    <div class="header-sub">CONTACT DETAILS : INDORE +91-91111-91111</div>
                 </div>
+            </div>
 
-        <div class="text-center  text-base my-2 border border-black pb-1" style="margin-bottom: 8px;">
-            CONSIGNMENT NOTE CUM CHECK LIST - <%= copyType %>
-        </div>
+            <!-- TITLE -->
+            <div class="title-bar">
+                CONSIGNMENT NOTE CUM CHECK LIST - <%= copyType %>
+            </div>
 
-        <table class="w-full border-collapse border border-black mb-2 text-sm">
-            <tbody>
-                <tr>
-                    <td class="p-1 border border-black font-semibold w-1/4">Challan No:</td>
-                    <td class="p-1 border border-black w-1/4"><%= vehicle.challanNo %></td>
-                    <td class="p-1 border border-black font-semibold text-center" colspan="2"><%= copyType %></td>
-                </tr>
-                <tr>
-                    <td class="p-1 border border-black font-semibold">Name of Consignor:</td>
-                    <td class="p-1 border border-black"><%= vehicle.consignorName %></td>
-                    <td class="p-1 border border-black font-semibold">Invoice Date</td>
-                    <td class="p-1 border border-black"><%= new Date(vehicle.invoiceDate).toLocaleDateString('en-GB') %></td>
-                </tr>
-                <tr>
-                    <td class="p-1 border border-black font-semibold">Address of Consignor:</td>
-                    <td class="p-1 border border-black"><%= vehicle.consignorAddress %></td>
-                    <td class="p-1 border border-black font-semibold">Challan Date</td>
-                    <td class="p-1 border border-black"><%= new Date(vehicle.dispatchDate).toLocaleDateString('en-GB') %></td>
-                </tr>
-                <tr>
-                    <td class="p-1 border border-black"></td>
-                    <td class="p-1 border border-black"></td>
-                    <td class="p-1 border border-black font-semibold">Expected Delivery Date</td>
-                    <td class="p-1 border border-black"><%= vehicle.deliveryDate ? new Date(vehicle.deliveryDate).toLocaleDateString('en-GB') : 'N/A' %></td>
-                </tr>
-                <tr>
-                    <td class="p-1 border border-black font-semibold">Name of Depot/Dealer/Customer:</td>
-                    <td class="p-1 border border-black"><%= vehicle.consigneeName %></td>
-                    <td class="p-1 border border-black font-semibold">Driver Name</td>
-                    <td class="p-1 border border-black"><%= vehicle.driverName %></td>
-                </tr>
-                <tr>
-                    <td class="p-1 border border-black font-semibold">Address of Depot/Dealer/Customer:</td>
-                    <td class="p-1 border border-black"><%= vehicle.consigneeAddress %></td>
-                    <td class="p-1 border border-black font-semibold">Place</td>
-                    <td class="p-1 border border-black"><%= vehicle.consignorAddress %></td>
-                </tr>
-                <tr>
-                    <td class="p-1 border border-black"></td>
-                    <td class="p-1 border border-black"></td>
-                    <td class="p-1 border border-black font-semibold">Delivery</td>
-                    <td class="p-1 border border-black"><%= vehicle.placeOfDelivery %></td>
-                </tr>
-            </tbody>
-        </table>
+            <!-- MAIN INFO TABLE -->
+            <table>
+                <tbody>
+                    <tr>
+                        <td class="lbl w25">Challan No:</td>
+                        <td class="w25"><%= vehicle.challanNo %></td>
+                        <td class="lbl" colspan="2" style="text-align:center;"><%= copyType %></td>
+                    </tr>
+                    <tr>
+                        <td class="lbl">Name of Consignor:</td>
+                        <td><%= vehicle.consignorName %></td>
+                        <td class="lbl">Invoice Date</td>
+                        <td><%= new Date(vehicle.invoiceDate).toLocaleDateString('en-GB') %></td>
+                    </tr>
+                    <tr>
+                        <td class="lbl">Address of Consignor:</td>
+                        <td><%= vehicle.consignorAddress %></td>
+                        <td class="lbl">Challan Date</td>
+                        <td><%= new Date(vehicle.dispatchDate).toLocaleDateString('en-GB') %></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td class="lbl">Expected Delivery Date</td>
+                        <td><%= vehicle.deliveryDate ? new Date(vehicle.deliveryDate).toLocaleDateString('en-GB') : 'N/A' %></td>
+                    </tr>
+                    <tr>
+                        <td class="lbl">Name of Depot/Dealer/Customer:</td>
+                        <td><%= vehicle.consigneeName %></td>
+                        <td class="lbl">Driver Name</td>
+                        <td><%= vehicle.driverName %></td>
+                    </tr>
+                    <tr>
+                        <td class="lbl">Address of Depot/Dealer/Customer:</td>
+                        <td><%= vehicle.consigneeAddress %></td>
+                        <td class="lbl">Place</td>
+                        <td><%= vehicle.consignorAddress %></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td class="lbl">Delivery</td>
+                        <td><%= vehicle.placeOfDelivery %></td>
+                    </tr>
+                </tbody>
+            </table>
 
-        <table class="w-full border-collapse border border-black text-sm">
-            <tbody>
+            <!-- VEHICLE DETAILS TABLE -->
+            <table>
+                <tbody>
+                    <tr>
+                        <td class="lbl w25">Chassis No:</td>
+                        <td class="w25"><%= vehicle.chassisNo %></td>
+                        <td class="lbl w25">Vehicle Model:</td>
+                        <td class="w25"><%= vehicle.modelDetails %></td>
+                    </tr>
+                    <tr>
+                        <td class="lbl">Engine No:</td>
+                        <td><%= vehicle.engineNo %></td>
+                        <td class="lbl">Temp Reg No:</td>
+                        <td><%= vehicle.tempRegNo %></td>
+                    </tr>
+                    <tr>
+                        <td class="lbl">Invoice No:</td>
+                        <td><%= vehicle.invoiceNo %></td>
+                        <td class="lbl">Insurance No:</td>
+                        <td><%= vehicle.insuranceNo %></td>
+                    </tr>
+                    <tr>
+                        <td class="lbl">Insurance Company:</td>
+                        <td><%= vehicle.insuranceCompany %></td>
+                        <td class="lbl">KM Reading:</td>
+                        <td>Start: _______ End: _______</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- CHECKLIST -->
+            <div class="section-title">Checklist (Kindly Tick (✓))</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th colspan="1">Checklist</th>
+                        <th colspan="4">Kindly Tick ( ✓ )</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Invoice Original / Duplicate:</td>
+                        <td>Yes</td><td></td>
+                        <td>No</td><td></td>
+                    </tr>
+                    <tr>
+                        <td>Insurance Paper:</td>
+                        <td>Yes</td><td></td>
+                        <td>No</td><td></td>
+                    </tr>
+                    <tr>
+                        <td>T.R.C.:</td>
+                        <td>Yes</td><td></td>
+                        <td>No</td><td></td>
+                    </tr>
+                    <tr>
+                        <td>Service Book:</td>
+                        <td>Yes</td><td></td>
+                        <td>No</td><td></td>
+                    </tr>
+                    <tr>
+                        <td>Tool Kit:</td>
+                        <td>Yes</td><td></td>
+                        <td>No</td><td></td>
+                    </tr>
+                    <tr>
+                        <td>Key Ring:</td>
+                        <td>Yes</td><td></td>
+                        <td>No</td><td></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- RATING TABLE -->
+            <table>
+                <thead>
+                    <tr>
+                        <th>Particular</th>
+                        <th>Very Good</th>
+                        <th>Good</th>
+                        <th>Average</th>
+                        <th>Poor</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="text-align:center;">Delivery on Time</td>
+                        <td></td><td></td><td></td><td></td>
+                    </tr>
+                    <tr>
+                        <td style="text-align:center;">Behavior of Incharge</td>
+                        <td></td><td></td><td></td><td></td>
+                    </tr>
+                    <tr>
+                        <td style="text-align:center;">Cleanliness of Vehicle</td>
+                        <td></td><td></td><td></td><td></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- DAMAGE & NOTE -->
+            <div class="misc-line">Damage if any: ☐ YES &nbsp;&nbsp; ☐ NO &nbsp;&nbsp; E-Mail I'd:</div>
+            <div class="italic-note">In case of any damage provide a photograph with incharge of convoy, standing near by the vehicle.</div>
+
+            <!-- PARTNER TABLE -->
+            <table>
+                <tbody>
+                    <tr>
+                        <td class="w33">PARTNER NAME:</td>
+                        <td class="w33">E-MAIL ID:</td>
+                        <td class="w33">CONTACT NO:</td>
+                    </tr>
+                    <tr>
+                        <td colspan="3">FOR TRANSIT RELATED INFORMATION CONTACT: 91-9752092341</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- REMARKS -->
+            <div class="misc-line">At the time of vehicle delivery Diesel in tank 7 Ltrs :-</div>
+            <div class="misc-line">In case of Manufacturing / Technical fault :-</div>
+            <div class="misc-line">Remark :-</div>
+            <div class="misc-line">Any Comments / Suggestion for Improvement of Services :-</div>
+
+            <!-- RECIPIENT TABLE -->
+            <table>
+                <tbody>
+                    <tr>
+                        <td class="w25 lbl">Receipent Name: <%= vehicle.consigneeName %></td>
+                        <td class="w25"></td>
+                        <td class="w25 lbl">Receipent Mob No.:</td>
+                        <td class="w25"></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- SIGNATURE TABLE -->
+            <table class="sig-table" style="margin-top: 4px;">
                 <tr>
-                    <td class="p-1 border border-black font-semibold w-1/4">Chassis No:</td>
-                    <td class="p-1 border border-black w-1/4"><%= vehicle.chassisNo %></td>
-                    <td class="p-1 border border-black font-semibold w-1/4">Vehicle Model:</td>
-                    <td class="p-1 border border-black w-1/4"><%= vehicle.modelDetails %></td>
-                </tr>
-                <tr>
-                    <td class="p-1 border border-black font-semibold">Engine No:</td>
-                    <td class="p-1 border border-black"><%= vehicle.engineNo %></td>
-                    <td class="p-1 border border-black font-semibold">Temp Reg No:</td>
-                    <td class="p-1 border border-black"><%= vehicle.tempRegNo %></td>
-                </tr>
-                <tr>
-                    <td class="p-1 border border-black font-semibold">Invoice No:</td>
-                    <td class="p-1 border border-black"><%= vehicle.invoiceNo %></td>
-                    <td class="p-1 border border-black font-semibold">Insurance No:</td>
-                    <td class="p-1 border border-black"><%= vehicle.insuranceNo %></td>
-                </tr>
-                <tr>
-                    <td class="p-1 border border-black font-semibold">Insurance Company:</td>
-                    <td class="p-1 border border-black"><%= vehicle.insuranceCompany %></td>
-                    <td class="p-1 border border-black font-semibold">KM Reading:</td>
-                    <td class="p-1 border border-black">
-                        Start: _______ End: _______
+                    <td class="w33">DRIVER SIGNATURE</td>
+                    <td class="w33">
+                        <% if (signatureUrl) { %>
+                            <img src="<%= signatureUrl %>" alt="Signature">
+                        <% } %>
+                        SIGNATURE &amp; STAMP<br>
+                        DELIVERY DATE: <%= vehicle.deliveryDate ? new Date(vehicle.deliveryDate).toLocaleDateString('en-GB') : 'N/A' %>
                     </td>
+                    <td class="w33">RECEIPIENT SIGNATURE &amp; STAMP</td>
                 </tr>
-            </tbody>
-        </table>
+            </table>
 
-        <div class="font-bold my-2">Checklist (Kindly Tick (✓))</div>
-
-        <table class="w-full border-collapse mb-4">
-            <thead>
-                <tr class="text-center bg-gray-200">
-                    <th class="p-1 border border-black" colspan="1">Checklist</th>
-                    <th class="p-1 border border-black" colspan="4">Kindly Tick ( ✓ )</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td class="p-1 border border-black" colspan="1">Invoice Original / Duplicate:</td>
-                    <td class="p-1 border border-black">Yes</td>
-                    <td class="p-1 border border-black"></td>
-                    <td class="p-1 border border-black">No</td>
-                    <td class="p-1 border border-black"></td>
-                </tr>
-                <tr>
-                    <td class="p-1 border border-black" colspan="1">Insurance Paper:</td>
-                    <td class="p-1 border border-black">Yes</td>
-                    <td class="p-1 border border-black"></td>
-                    <td class="p-1 border border-black">No</td>
-                    <td class="p-1 border border-black"></td>
-                </tr>
-                <tr>
-                    <td class="p-1 border border-black" colspan="1">T.R.C.:</td>
-                    <td class="p-1 border border-black">Yes</td>
-                    <td class="p-1 border border-black"></td>
-                    <td class="p-1 border border-black">No</td>
-                    <td class="p-1 border border-black"></td>
-                </tr>
-                <tr>
-                    <td class="p-1 border border-black" colspan="1">Service Book:</td>
-                    <td class="p-1 border border-black">Yes</td>
-                    <td class="p-1 border border-black"></td>
-                    <td class="p-1 border border-black">No</td>
-                    <td class="p-1 border border-black"></td>
-                </tr>
-                <tr>
-                    <td class="p-1 border border-black" colspan="1">Tool Kit:</td>
-                    <td class="p-1 border border-black">Yes</td>
-                    <td class="p-1 border border-black" ></td>
-                    <td class="p-1 border border-black">No</td>
-                    <td class="p-1 border border-black"></td>
-                </tr>
-                <tr>
-                    <td class="p-1 border border-black" colspan="1">Key Ring:</td>
-                    <td class="p-1 border border-black">Yes</td>
-                    <td class="p-1 border border-black"></td>
-                    <td class="p-1 border border-black">No</td>
-                    <td class="p-1 border border-black"></td>
-                </tr>
-            </tbody>
-        </table>
-
-        <table class="w-full border-collapse mb-4">
-            <thead>
-                <tr class="text-center bg-gray-200">
-                    <th class="p-1 border border-black">Particular</th>
-                    <th class="p-1 border border-black">Very Good</th>
-                    <th class="p-1 border border-black">Good</th>
-                    <th class="p-1 border border-black">Average</th>
-                    <th class="p-1 border border-black">Poor</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr class="text-center">
-                    <td class="p-1 border border-black">Delivery on Time</td>
-                    <td class="p-1 border border-black"></td>
-                    <td class="p-1 border border-black"></td>
-                    <td class="p-1 border border-black"></td>
-                    <td class="p-1 border border-black"></td>
-                </tr>
-                <tr class="text-center">
-                    <td class="p-1 border border-black">Behavior of Incharge</td>
-                    <td class="p-1 border border-black"></td>
-                    <td class="p-1 border border-black"></td>
-                    <td class="p-1 border border-black"></td>
-                    <td class="p-1 border border-black"></td>
-                </tr>
-                <tr class="text-center">
-                    <td class="p-1 border border-black">Cleanliness of Vehicle</td>
-                    <td class="p-1 border border-black"></td>
-                    <td class="p-1 border border-black"></td>
-                    <td class="p-1 border border-black"></td>
-                    <td class="p-1 border border-black"></td>
-                </tr>
-            </tbody>
-        </table>
-
-        <div class="my-2">
-            Damage if any: ☐ YES ☐ NO E-Mail I'd:
-        </div>
-
-        <div class="my-2 italic">
-            In case of any damage provide a photograph with incharge of convoy,
-            standing near by the vehicle.
-        </div>
-
-        <table class="w-full border-collapse mb-2">
-            <tbody>
-                <tr>
-                    <td class="p-1 border border-black w-1/3">PARTNER NAME: </td>
-                    <td class="p-1 border border-black w-1/3">E-MAIL ID: </td>
-                    <td class="p-1 border border-black w-1/3">CONTACT NO: </td>
-                </tr>
-                <tr>
-                    <td colspan="3" class="p-1 border border-black">
-                        FOR TRANSIT RELATED INFORMATION CONTACT: 91-9752092341
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-
-        <div class="my-2">At the time of vehicle delivery Diesel in tank 7 Ltrs :-</div>
-        <div class="my-2">In case of Manufacturing / Technical fault :-</div>
-        <div class="my-2">Remark :-</div>
-        <div class="my-2">Any Comments /Suggestion for Improvement of Services :-</div>
-
-        <table class="w-full border-collapse mb-2">
-            <tbody>
-                <tr>
-                    <td class="p-1 border border-black w-1/4">Receipent Name: <%= vehicle.consigneeName %></td>
-                    <td class="p-1 border border-black w-1/4"></td>
-                    <td class="p-1 border border-black w-1/4">Receipent Mob No.:</td>
-                    <td class="p-1 border border-black w-1/4"></td>
-                </tr>
-            </tbody>
-        </table>
-
-        <div class="mt-8 flex-grow flex flex-col justify-end">
-          <table class="w-full border-collapse border border-black" style="margin-top: 32px;">
-            <tr>
-              <td class="p-2 border border-black text-center" style="width: 33.33%; vertical-align: top; height: 80px;">
-                DRIVER SIGNATURE
-              </td>
-              <td class="p-2 border border-black text-center" style="width: 33.33%; vertical-align: top;">
-                <% if (signatureUrl) { %>
-                    <img src="<%= signatureUrl %>" alt="Signature" style="max-width: 120px; max-height: 60px; display: block; margin: 0 auto 5px auto;">
-                <% } %>
-                SIGNATURE & STAMP<br>
-                DELIVERY DATE: <%= vehicle.deliveryDate ? new Date(vehicle.deliveryDate).toLocaleDateString('en-GB') : 'N/A' %>
-              </td>
-              <td class="p-2 border border-black text-center" style="width: 33.33%; vertical-align: top; height: 80px;">
-                RECEIPIENT SIGNATURE & STAMP
-              </td>
-            </tr>
-          </table>
-        </div>
-    </div>
+        </div><!-- /challan-container -->
+    </div><!-- /outer-box -->
+</div><!-- /page-container -->
 </body>
 </html>
