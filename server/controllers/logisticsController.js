@@ -95,19 +95,93 @@ exports.getModels = async (req, res) => {
 
 exports.createModel = async (req, res) => {
   try {
+    const { modelSpecs } = req.body;
+
+    if (modelSpecs) {
+      // ✅ 1. modelInfo unique
+      const infos = modelSpecs.map(s => s.modelInfo?.trim().toLowerCase());
+      if (infos.length !== new Set(infos).size) {
+        return res.status(400).json({
+          message: "modelInfo must be unique within a model"
+        });
+      }
+
+      // ✅ 2. modelDetails unique inside each object
+      for (let spec of modelSpecs) {
+        if (spec.modelDetails) {
+          const details = spec.modelDetails.map(d => d.trim().toLowerCase());
+
+          if (details.length !== new Set(details).size) {
+            return res.status(400).json({
+              message: `Duplicate modelDetails found in modelInfo: ${spec.modelInfo}`
+            });
+          }
+        }
+      }
+    }
+
     const item = await ModelDetails.create(req.body);
-    try { syncModelToSheet(item); } catch(_) {}
+
+    try { syncModelToSheet(item); } catch (_) {}
+
     res.status(201).json({ item });
-  } catch (err) { res.status(500).json({ message: err.message }); }
+
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(400).json({ message: "Model already exists" });
+    }
+    res.status(500).json({ message: err.message });
+  }
 };
 
 exports.updateModel = async (req, res) => {
   try {
-    const item = await ModelDetails.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!item) return res.status(404).json({ message: "Not found" });
-    try { syncModelToSheet(item); } catch(_) {}
+    const { modelSpecs } = req.body;
+
+    if (modelSpecs) {
+      // ✅ 1. modelInfo unique
+      const infos = modelSpecs.map(s => s.modelInfo?.trim().toLowerCase());
+      if (infos.length !== new Set(infos).size) {
+        return res.status(400).json({
+          message: "modelInfo must be unique within a model"
+        });
+      }
+
+      // ✅ 2. modelDetails unique inside each object
+      for (let spec of modelSpecs) {
+        if (spec.modelDetails) {
+          const details = spec.modelDetails.map(d => d.trim().toLowerCase());
+
+          if (details.length !== new Set(details).size) {
+            return res.status(400).json({
+              message: `Duplicate modelDetails found in modelInfo: ${spec.modelInfo}`
+            });
+          }
+        }
+      }
+    }
+
+    const item = await ModelDetails.findById(req.params.id);
+
+    if (!item) {
+      return res.status(404).json({ message: "Not found" });
+    }
+
+    Object.assign(item, req.body);
+
+    await item.save(); // ✅ triggers schema validation
+
+    try { syncModelToSheet(item); } catch (_) {}
+
     res.json({ item });
-  } catch (err) { res.status(500).json({ message: err.message }); }
+
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(400).json({ message: "Model already exists" });
+    }
+
+    res.status(500).json({ message: err.message });
+  }
 };
 
 exports.deleteModel = async (req, res) => {

@@ -112,18 +112,64 @@ function FMLForm({ item, onClose, onSaved }) {
     returnFare: item?.returnFare || "",
   });
   const [saving, setSaving] = useState(false);
-  const set = useCallback((e) => setForm(p => ({ ...p, [e.target.name]: e.target.value })), []);
+ const set = useCallback((e) => {
+  const { name, value } = e.target;
 
+  setForm(p => ({
+    ...p,
+    [name]: typeof value === "string" ? value.toUpperCase() : value
+  }));
+}, []); 
   const submit = async () => {
-    if (!form.consigneeName.trim()) return toast.error("Consignee Name required");
-    setSaving(true);
-    try {
-      if (isEdit) { await api.put(`/logistics/fml/${item._id}`, form); toast.success("Updated"); }
-      else { await api.post("/logistics/fml", form); toast.success("Added"); }
-      onSaved(); onClose();
-    } catch(err) { toast.error(err.response?.data?.message || "Failed"); }
-    finally { setSaving(false); }
-  };
+
+  if (!form.logisticPartner.trim()) {
+    return toast.error("Logistic Partner is required");
+  }
+
+  if (!form.location.trim()) {
+    return toast.error("Place Of Delivery is required");
+  }
+
+  if (!form.consigneeName.trim()) {
+    return toast.error("Consignee Name is required");
+  }
+
+  if (!form.consigneeRegion.trim()) {
+    return toast.error("Consignee Region is required");
+  }
+
+  if (!form.consigneeAddress.trim()) {
+    return toast.error("Consignee Address is required");
+  }
+
+  if (!form.overallKM) {
+    return toast.error("Overall KM is required");
+  }
+
+  if (!form.returnFare) {
+    return toast.error("Return Fare is required");
+  }
+
+  setSaving(true);
+
+  try {
+    if (isEdit) {
+      await api.put(`/logistics/fml/${item._id}`, form);
+      toast.success("Updated");
+    } else {
+      await api.post("/logistics/fml", form);
+      toast.success("Added");
+    }
+
+    onSaved();
+    onClose();
+
+  } catch (err) {
+    toast.error(err.response?.data?.message || "Failed");
+  } finally {
+    setSaving(false);
+  }
+};
 
   return (
     <Modal title={isEdit ? "Edit Logistics Partner" : "Add Logistics Partner"} onClose={onClose}>
@@ -158,35 +204,125 @@ function ModelForm({ item, partner, onClose, onSaved }) {
   });
   const [saving, setSaving] = useState(false);
 
-  const setField = useCallback((e) => setForm(p => ({ ...p, [e.target.name]: e.target.value })), []);
+ const setField = useCallback((e) => {
+  const { name, value } = e.target;
 
+  setForm(p => ({
+    ...p,
+    [name]: typeof value === "string" ? value.toUpperCase() : value
+  }));
+}, []);
   const addSpec = () => setForm(p => ({ ...p, modelSpecs: [...p.modelSpecs, { modelInfo:"", modelDetails:[""] }] }));
   const removeSpec = (i) => setForm(p => ({ ...p, modelSpecs: p.modelSpecs.filter((_,j)=>j!==i) }));
-  const setSpecInfo = (i, v) => setForm(p => { const s=[...p.modelSpecs]; s[i]={...s[i],modelInfo:v}; return {...p,modelSpecs:s}; });
-  const addDetail = (i) => setForm(p => { const s=[...p.modelSpecs]; s[i]={...s[i],modelDetails:[...s[i].modelDetails,""]}; return {...p,modelSpecs:s}; });
+ const setSpecInfo = (i, v) =>
+  setForm(p => {
+    const s = [...p.modelSpecs];
+    s[i] = { ...s[i], modelInfo: v.toUpperCase() };
+    return { ...p, modelSpecs: s };
+  });  const addDetail = (i) => setForm(p => { const s=[...p.modelSpecs]; s[i]={...s[i],modelDetails:[...s[i].modelDetails,""]}; return {...p,modelSpecs:s}; });
   const removeDetail = (i,j) => setForm(p => { const s=[...p.modelSpecs]; s[i]={...s[i],modelDetails:s[i].modelDetails.filter((_,k)=>k!==j)}; return {...p,modelSpecs:s}; });
-  const setDetail = (i,j,v) => setForm(p => { const s=[...p.modelSpecs]; const d=[...s[i].modelDetails]; d[j]=v; s[i]={...s[i],modelDetails:d}; return {...p,modelSpecs:s}; });
+ const setDetail = (i, j, v) =>
+  setForm(p => {
+    const s = [...p.modelSpecs];
+    const d = [...s[i].modelDetails];
+    d[j] = v.toUpperCase();
+    s[i] = { ...s[i], modelDetails: d };
+    return { ...p, modelSpecs: s };
+  });
+const submit = async () => {
 
-  const submit = async () => {
-    setSaving(true);
-    try {
-      const payload = { ...form, average:Number(form.average)||0, driverWages:Number(form.driverWages)||0, vehicleRate:Number(form.vehicleRate)||0, billingCode:Number(form.billingCode)||0 };
-      if (isEdit) { await api.put(`/logistics/models/${item._id}`, payload); toast.success("Updated"); }
-      else { await api.post("/logistics/models", payload); toast.success("Added"); }
-      onSaved(); onClose();
-    } catch(err) { toast.error(err.response?.data?.message || "Failed"); }
-    finally { setSaving(false); }
-  };
+  // ✅ Basic fields validation
+  if (!form.logisticPartner.trim()) return toast.error("Logistic Partner is required");
+  if (!form.model.trim()) return toast.error("Model is required");
+  if (!form.average) return toast.error("Average is required");
+  if (!form.driverWages) return toast.error("Driver Wages is required");
+  if (!form.vehicleRate) return toast.error("Vehicle Rate is required");
+  if (!form.billingCode) return toast.error("Billing Code is required");
+
+  // ✅ modelSpecs validation
+  if (!form.modelSpecs.length) {
+    return toast.error("At least one Model Info is required");
+  }
+
+  const infoSet = new Set();
+
+  for (let i = 0; i < form.modelSpecs.length; i++) {
+    const spec = form.modelSpecs[i];
+
+    // ✅ modelInfo required
+    if (!spec.modelInfo.trim()) {
+      return toast.error(`Model Info required at row ${i + 1}`);
+    }
+
+    // ✅ duplicate modelInfo
+    const infoKey = spec.modelInfo.trim().toLowerCase();
+    if (infoSet.has(infoKey)) {
+      return toast.error(`Duplicate Model Info: ${spec.modelInfo}`);
+    }
+    infoSet.add(infoKey);
+
+    // ✅ modelDetails required
+    if (!spec.modelDetails.length) {
+      return toast.error(`Add at least one Model Detail in ${spec.modelInfo}`);
+    }
+
+    const detailSet = new Set();
+
+    for (let j = 0; j < spec.modelDetails.length; j++) {
+      const d = spec.modelDetails[j];
+
+      if (!d.trim()) {
+        return toast.error(`Model Detail required in ${spec.modelInfo}`);
+      }
+
+      const dKey = d.trim().toLowerCase();
+
+      if (detailSet.has(dKey)) {
+        return toast.error(`Duplicate Model Detail "${d}" in ${spec.modelInfo}`);
+      }
+
+      detailSet.add(dKey);
+    }
+  }
+
+  // ✅ Proceed API call
+  setSaving(true);
+  try {
+    const payload = {
+      ...form,
+      average: Number(form.average),
+      driverWages: Number(form.driverWages),
+      vehicleRate: Number(form.vehicleRate),
+      billingCode: Number(form.billingCode)
+    };
+
+    if (isEdit) {
+      await api.put(`/logistics/models/${item._id}`, payload);
+      toast.success("Updated");
+    } else {
+      await api.post("/logistics/models", payload);
+      toast.success("Added");
+    }
+
+    onSaved();
+    onClose();
+
+  } catch (err) {
+    toast.error(err.response?.data?.message || "Failed");
+  } finally {
+    setSaving(false);
+  }
+};
 
   return (
     <Modal title={isEdit ? "Edit Model Detail" : "Add Model Detail"} onClose={onClose} width="min(95vw,760px)">
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-        <Fld label="Logistic Partner"><input name="logisticPartner" value={form.logisticPartner} onChange={setField} style={INP} /></Fld>
-        <Fld label="Model"><input name="model" value={form.model} onChange={setField} style={INP} /></Fld>
-        <Fld label="Average"><input name="average" type="number" value={form.average} onChange={setField} style={INP} /></Fld>
-        <Fld label="Driver Wages"><input name="driverWages" type="number" value={form.driverWages} onChange={setField} style={INP} /></Fld>
-        <Fld label="Vehicle Rate"><input name="vehicleRate" type="number" value={form.vehicleRate} onChange={setField} style={INP} /></Fld>
-        <Fld label="Billing Code"><input name="billingCode" type="number" value={form.billingCode} onChange={setField} style={INP} /></Fld>
+        <Fld label="Logistic Partner *"><input name="logisticPartner" value={form.logisticPartner} onChange={setField} style={INP} /></Fld>
+        <Fld label="Model *"><input name="model" value={form.model} onChange={setField} style={INP} /></Fld>
+        <Fld label="Average *"><input name="average" type="number" value={form.average} onChange={setField} style={INP} /></Fld>
+        <Fld label="Driver Wages *"><input name="driverWages" type="number" value={form.driverWages} onChange={setField} style={INP} /></Fld>
+        <Fld label="Vehicle Rate *"><input name="vehicleRate" type="number" value={form.vehicleRate} onChange={setField} style={INP} /></Fld>
+        <Fld label="Billing Code *"><input name="billingCode" type="number" value={form.billingCode} onChange={setField} style={INP} /></Fld>
       </div>
 
       <div style={{ background:C.panel, border:`1px solid ${C.border}`, borderRadius:8, padding:16, marginTop:8 }}>
