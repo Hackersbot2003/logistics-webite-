@@ -11,6 +11,7 @@ const C = {
   muted:"#64748B", faint:"#94A3B8", blue:"#2563EB", red:"#EF4444",
   green:"#16A34A", yellow:"#D97706",
 };
+
 const INP = { width:"100%", padding:"9px 12px", border:`1px solid ${C.border}`, borderRadius:7, fontSize:14, color:C.text, outline:"none", boxSizing:"border-box", background:"#F8FAFC", fontFamily:"inherit" };
 const INP_RO = { ...INP, background:"#F1F5F9", color:C.muted, cursor:"default" };
 const SEL = { ...INP, cursor:"pointer" };
@@ -260,9 +261,53 @@ function FMLForm({ sheets, vehicle, onClose, onSaved }) {
   const ls=licSt();
 
   const submit=async()=>{
-    const req=["invoiceNo","placeOfDelivery","consigneeName","model","chassisNo","engineNo"];
-    for(const k of req){if(!form[k]?.trim()){toast.error(`${k} is required`);return;}}
-    setSaving(true);
+    const req = [
+    "invoiceDate",
+    "invoiceNo",
+    "dateOfCollection",
+    "dispatchDate",
+    "actualDispatchDate",
+
+    "placeOfCollection",
+    "placeOfDelivery",
+    "consigneeName",
+    "overallKm",
+    "consigneeRegion",
+    "consigneeAddress",
+    "consignorName",
+    "consignorAddress",
+
+    "model",
+    "modelInfo",
+    "modelDetails",
+    "chassisNo",
+    "engineNo",
+    "tempRegNo",
+
+    "insuranceCompany",
+    "insuranceNo",
+    "fasTagNo",
+
+    "tokenNo",
+    "driverName",
+    "phoneNo",
+    "drivingLicenseNo",
+    "inchargeName",
+    "currentIncharge",
+
+    "date",
+    "time",
+    "vehicleLocation",
+    "vehicleStatus"
+  ];
+
+  // ✅ ADD THIS HERE
+  for (const key of req) {
+    if (!form[key] || !form[key].toString().trim()) {
+      toast.error(`${key.replace(/([A-Z])/g, ' $1')} is required`);
+      return;
+    }
+  } setSaving(true);
     try{
       if(isEdit){ await api.put(`/vehicles/${vehicle._id}`,form); toast.success("Vehicle updated"); }
       else{ const {data}=await api.post("/vehicles",{...form,sheetType:"FML"}); toast.success(`Created: ${data.vehicle.challanNo}`); }

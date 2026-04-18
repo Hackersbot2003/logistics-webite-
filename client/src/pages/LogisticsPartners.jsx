@@ -17,7 +17,7 @@ function usePaginatedSort(items, defaultSort="") {
   const [search, setSearch] = useState("");
   const [sortField, setSortField] = useState(defaultSort);
   const [sortDir, setSortDir] = useState(1);
-
+  
   const filtered = items.filter(item =>
     Object.values(item).some(v => String(v||"").toLowerCase().includes(search.toLowerCase()))
   );
@@ -479,6 +479,7 @@ function FMLSection() {
   const [delItem, setDelItem] = useState(null);
   const [delType, setDelType] = useState("");
   const [tollSearch, setTollSearch] = useState("");
+  const [expandedSpecs, setExpandedSpecs] = useState({});
 
   const load = useCallback(async () => {
     try {
@@ -591,9 +592,79 @@ function FMLSection() {
                 <td style={{ padding: "10px 12px", fontSize: 13, color: C.text }}>{m.logisticPartner}</td>
                 <td style={{ padding: "10px 12px", fontSize: 13, fontWeight: 600, color: C.text }}>{m.model}</td>
                 <td style={{ padding: "10px 12px", fontSize: 12, maxWidth: 200, color: C.text }}>
-                  {m.modelSpecs?.map((s, i) => (
-                    <div key={i}><b>{s.modelInfo}</b>{s.modelDetails?.map((d, j) => <div key={j} style={{ paddingLeft: 8, color: C.muted }}>• {d}</div>)}</div>
-                  ))}
+               {(() => {
+  const modelKey = `${m._id}-info`;
+  const isInfoExpanded = expandedSpecs[modelKey];
+
+  const visibleSpecs = isInfoExpanded
+    ? m.modelSpecs
+    : m.modelSpecs?.slice(0, 2);
+
+  return (
+    <>
+      {visibleSpecs?.map((s, i) => {
+        const detailKey = `${m._id}-${i}`;
+        const isDetailExpanded = expandedSpecs[detailKey];
+
+        const visibleDetails = isDetailExpanded
+          ? s.modelDetails
+          : s.modelDetails?.slice(0, 2);
+
+        return (
+          <div key={i}>
+            <b>{s.modelInfo}</b>
+
+            {visibleDetails?.map((d, j) => (
+              <div key={j} style={{ paddingLeft: 8, color: C.muted }}>
+                • {d}
+              </div>
+            ))}
+
+            {/* DETAILS MORE */}
+            {s.modelDetails?.length > 2 && (
+              <div
+                onClick={() =>
+                  setExpandedSpecs(prev => ({
+                    ...prev,
+                    [detailKey]: !prev[detailKey],
+                  }))
+                }
+                style={{
+                  color: C.blue,
+                  cursor: "pointer",
+                  fontSize: 12,
+                  paddingLeft: 8,
+                }}
+              >
+                {isDetailExpanded ? "Show Less" : "More"}
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {/* MODEL INFO MORE */}
+      {m.modelSpecs?.length > 2 && (
+        <div
+          onClick={() =>
+            setExpandedSpecs(prev => ({
+              ...prev,
+              [modelKey]: !prev[modelKey],
+            }))
+          }
+          style={{
+            color: C.blue,
+            cursor: "pointer",
+            fontSize: 12,
+            marginTop: 4,
+          }}
+        >
+          {isInfoExpanded ? "Show Less" : "View More Models"}
+        </div>
+      )}
+    </>
+  );
+})()}
                 </td>
                 <td style={{ padding: "10px 12px", fontSize: 13, color: C.text }}>{m.average}</td>
                 <td style={{ padding: "10px 12px", fontSize: 13, color: C.text }}>{m.driverWages}</td>
