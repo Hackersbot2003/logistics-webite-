@@ -30,8 +30,10 @@
 }
 
        .outer-box {
-    min-height: calc(297mm - 10mm);
+    min-height: 180mm;
     display: flex;
+    border:1px solid #000;
+    padding: 2mm;;
     flex-direction: column;
     justify-content: space-between;
 }
@@ -185,15 +187,15 @@
         @media print {
             html, body {
                 width: 150mm;
-                height: 240mm;
+                height: 180mm;
             }
             .page-container {
                 width: 150mm;
-                min-height: 240mm;
+                min-height: 180mm;
                 padding: 5mm;
             }
             .outer-box {
-                min-height: calc(297mm - 10mm);
+                min-height: 180mm;
             }
         }
     </style>
