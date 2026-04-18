@@ -45,26 +45,27 @@
             overflow: hidden;
         }
 
-        .header-logo-cell {
-            width: 12%;
-            min-width: 12%;
-            max-width: 12%;
-            border-right: 1px solid #000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 4px;
-            overflow: hidden;
-        }
+       .header-logo-cell {
+    width: 12%;
+    min-width: 12%;
+    max-width: 12%;
+    border-right: 1px solid #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    overflow: hidden;
+}
 
-        .header-logo-img {
-            max-width: 100%;
-            max-height: 55px;
-            width: auto;
-            height: auto;
-            display: block;
-            object-fit: contain;
-        }
+.header-logo-img {
+    width: auto;
+    height: 40px;      /* ← fixed height, will never exceed the row */
+    max-width: 100%;
+    max-height: 40px;  /* ← hard cap */
+    object-fit: contain;
+    display: block;
+    margin-top: 0;     /* ← remove any margin-top you added */
+}
 
         .header-info-cell {
             flex: 1;
@@ -74,6 +75,7 @@
             justify-content: center;
             padding: 4px 8px;
             overflow: hidden;
+             margin-top: -40px; 
         }
 
         .header-company {
