@@ -109,57 +109,80 @@ exports.deleteSignature = async (req, res) => {
 // ── GET /api/lr/generate ──────────────────────────────────────────────────────
 exports.generateLR = async (req, res) => {
   try {
-    const { challanNo, addSignature, signatureId, copies } = req.query;
-    if (!challanNo) return res.status(400).json({ message: 'challanNo required' });
+    const { challanNo, addSignature, signatureId } = req.query;
 
-    const vehicle = await Vehicle.findOne({ 
-        challanNo: new RegExp(`^${challanNo}$`, 'i'), 
-        deletedAt: null 
+    if (!challanNo) {
+      return res.status(400).json({ message: 'challanNo required' });
+    }
+
+    // 🔍 Fetch vehicle
+    const vehicle = await Vehicle.findOne({
+      challanNo: new RegExp(`^${challanNo}$`, 'i'),
+      deletedAt: null
     }).lean();
 
-    if (!vehicle) return res.status(404).json({ message: `Challan "${challanNo}" not found` });
+    if (!vehicle) {
+      return res.status(404).json({ message: `Challan "${challanNo}" not found` });
+    }
 
+    // ✍️ Signature handling
     let signatureDataUrl = null;
     if (addSignature === 'true') {
       let sig;
-      if (signatureId) sig = await LrSignature.findById(signatureId);
-      if (!sig) sig = await LrSignature.findOne({ isDefault: true });
-      if (sig) signatureDataUrl = sig.directUrl;
+
+      if (signatureId) {
+        sig = await LrSignature.findById(signatureId);
+      }
+
+      if (!sig) {
+        sig = await LrSignature.findOne({ isDefault: true });
+      }
+
+      if (sig) {
+        signatureDataUrl = sig.directUrl;
+      }
     }
 
-    // Use Google Drive logo instead of local logo
- const logoBase64 = getLocalLogoBase64();
+    // 🖼️ Logo
+    const logoBase64 = getLocalLogoBase64();
 
-    // Generate multiple copies if requested
-    const requestedCopies = copies || 'original';
+    // ✅ ALWAYS generate 3 copies
+    const copyTypes = ['ORIGINAL', 'DUPLICATE', 'TRIPLICATE'];
+
     let htmlContent = '';
 
-    if (requestedCopies === 'all' || requestedCopies === 'three') {
-      // Generate three copies: Original, Duplicate, Triplicate
-      const copyTypes = ['ORIGINAL', 'DUPLICATE', 'TRIPLICATE'];
-      
-      for (let i = 0; i < copyTypes.length; i++) {
-        const copyHtml = await buildLRHtml(vehicle, signatureDataUrl, logoBase64, copyTypes[i]);
-        htmlContent += copyHtml;
-        if (i < copyTypes.length - 1) {
-          htmlContent += '<div style="page-break-after: always;"></div>'; // Page break between copies
-        }
+    for (let i = 0; i < copyTypes.length; i++) {
+
+      console.log("Generating:", copyTypes[i]); // ✅ debug log
+
+      const copyHtml = await buildLRHtml(
+        vehicle,
+        signatureDataUrl,
+        logoBase64,
+        copyTypes[i]
+      );
+
+      htmlContent += copyHtml;
+
+      // ✅ Page break between pages (NOT after last)
+      if (i < copyTypes.length - 1) {
+        htmlContent += '<div style="page-break-after: always;"></div>';
       }
-    } else {
-      // Generate single copy with specified type
-      const copyType = requestedCopies.toUpperCase();
-      htmlContent = await buildLRHtml(vehicle, signatureDataUrl, logoBase64, copyType);
     }
 
+    // 🚨 Safety check
     if (!htmlContent || typeof htmlContent !== 'string' || htmlContent.trim() === '') {
       throw new Error('Generated HTML is empty or invalid');
     }
 
+    // 📄 Convert to PDF
     const pdfBuffer = await htmlToPdfBuffer(htmlContent);
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename=LR_${challanNo}.pdf`);
+
     res.send(pdfBuffer);
+
   } catch (err) {
     logger.error('generateLR error:', err.message);
     res.status(500).json({ message: err.message });
@@ -167,28 +190,48 @@ exports.generateLR = async (req, res) => {
 };
 
 // ── HTML/UI Building Functions ───────────────────────────────────────────────
-
 async function buildLRHtml(v, signatureUrl, logoBase64, copyType = 'ORIGINAL') {
-  const fmt = (d) => {
-    if (!d) return '';
-    try { return new Date(d).toLocaleDateString('en-GB'); } catch { return d; }
-  };
+  console.log(v);
+  
+  // ✅ Safe Date Formatter
+ function formatDate(d) {
+  if (!d) return '';
 
-  // Render the EJS template
+  // Handle DD-MM-YYYY format
+  if (typeof d === 'string' && d.includes('-')) {
+    const parts = d.split('-');
+    
+    if (parts.length === 3) {
+      const [day, month, year] = parts;
+      const date = new Date(`${year}-${month}-${day}`); // convert to YYYY-MM-DD
+      
+      return isNaN(date) ? '' : date.toLocaleDateString('en-GB');
+    }
+  }
+
+  // fallback
+  const date = new Date(d);
+  return isNaN(date) ? '' : date.toLocaleDateString('en-GB');
+}
+
+  // ✅ Format all required dates BEFORE sending to EJS
+  v.invoiceDate = formatDate(v.invoiceDate);
+  v.dispatchDate = formatDate(v.dispatchDate);
+  v.deliveryDate = formatDate(v.deliveryDate);
+  v.expecteddeliveryDate = formatDate(v.expecteddeliveryDate);
+
+  // (Optional but recommended if used anywhere)
+  v.dateOfCollection = formatDate(v.dateOfCollection);
+  v.actualDispatchDate = formatDate(v.actualDispatchDate);
+
+  // ✅ Render the EJS template
   const templatePath = path.join(__dirname, '../templates/lr-template.ejs');
+
   const html = await ejs.renderFile(templatePath, {
     vehicle: v,
     signatureUrl: signatureUrl,
     logoBase64: logoBase64,
-    copyType: copyType,
-    new: {
-      Date: Date,
-      DatePrototype: {
-        toLocaleDateString: function(date, options) {
-          return new Date(date).toLocaleDateString('en-GB', options);
-        }
-      }
-    }
+    copyType: copyType
   });
 
   return html;

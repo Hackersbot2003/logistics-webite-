@@ -10,7 +10,10 @@
             padding: 0;
             box-sizing: border-box;
         }
-
+.page-break {
+  page-break-after: always;
+  break-after: page;
+}
         html, body {
             width: 100%;
             height: 100%;
@@ -21,7 +24,7 @@
 
         /* ── OUTER WRAPPER with equal padding ── */
        .page-container {
-    width: 180mm;
+    width: 150mm;
   
     padding: 5mm;
 }
@@ -181,12 +184,12 @@
 
         @media print {
             html, body {
-                width: 180mm;
-                height: 280mm;
+                width: 150mm;
+                height: 240mm;
             }
             .page-container {
-                width: 180mm;
-                min-height: 280mm;
+                width: 150mm;
+                min-height: 240mm;
                 padding: 5mm;
             }
             .outer-box {
@@ -228,19 +231,20 @@
                     <td class="lbl w25">Name of Consignor:</td>
                     <td class="w25"><%= vehicle.consignorName %></td>
                     <td class="lbl w25">Invoice Date</td>
-                    <td class="w25"><%= new Date(vehicle.invoiceDate).toLocaleDateString('en-GB') %></td>
+                    <td class="w25"><%= vehicle.invoiceDate %></td>
                 </tr>
                 <tr>
                     <td class="lbl w25">Address of Consignor:</td>
                     <td class="w25"><%= vehicle.consignorAddress %></td>
                     <td class="lbl w25">Challan Date</td>
-                    <td class="w25"><%= new Date(vehicle.dispatchDate).toLocaleDateString('en-GB') %></td>
+                    <td class="w25"><%= vehicle.dispatchDate %></td>
                 </tr>
                 <tr>
                     <td class="w25"></td>
                     <td class="w25"></td>
                     <td class="lbl w25">Expected Delivery Date</td>
-                    <td class="w25"><%= vehicle.deliveryDate ? new Date(vehicle.deliveryDate).toLocaleDateString('en-GB') : 'N/A' %></td>
+                  
+                     <td class="w25"> <%= vehicle.expecteddeliveryDate || 'N/A' %></td>
                 </tr>
                 <tr>
                     <td class="lbl w25">Name of Depot/Dealer/Customer:</td>
@@ -411,10 +415,10 @@
                             <img src="<%= signatureUrl %>" alt="Signature">
                         <% } %>
                         SIGNATURE &amp; STAMP<br>
-                        DELIVERY DATE: <%= vehicle.deliveryDate ? new Date(vehicle.deliveryDate).toLocaleDateString('en-GB') : 'N/A' %>
+                        DELIVERY DATE: <%= vehicle.deliveryDate || 'N/A' %>
                     </td>
                     <td class="w33">RECEIPIENT SIGNATURE &amp; STAMP</td>
-                </tr>Z
+                </tr>
             </tbody>
         </table>
 
