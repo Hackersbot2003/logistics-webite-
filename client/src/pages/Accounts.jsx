@@ -6,8 +6,8 @@ import { useDoubleConfirm } from "../components/DoubleConfirm";
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
-  bg:"#F1F5F9", white:"#fff", border:"#E2E8F0", text:"#1E293B",
-  muted:"#64748B", faint:"#94A3B8", blue:"#2563EB", red:"#EF4444",
+  bg:"#F1F5F9", white:"#fff", border:"#cbd2da", text:"#000000",
+  muted:"#000000", faint:"#94A3B8", blue:"#2563EB", red:"#EF4444",
   green:"#16A34A", yellow:"#D97706", panel:"#F8FAFC",
 };
 const INP     = { width:"100%",padding:"9px 12px",border:`1px solid ${C.border}`,borderRadius:7,fontSize:14,color:C.text,outline:"none",boxSizing:"border-box",background:C.white,fontFamily:"inherit" };

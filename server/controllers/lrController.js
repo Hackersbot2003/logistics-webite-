@@ -147,28 +147,30 @@ exports.generateLR = async (req, res) => {
     const logoBase64 = getLocalLogoBase64();
 
     // ✅ ALWAYS generate 3 copies
-    const copyTypes = ['ORIGINAL', 'DUPLICATE', 'TRIPLICATE'];
-
+    
     let htmlContent = '';
+const copyTypes = ['ORIGINAL', 'DUPLICATE', 'TRIPLICATE'];
 
-    for (let i = 0; i < copyTypes.length; i++) {
+for (let i = 0; i < copyTypes.length; i++) {
 
-      console.log("Generating:", copyTypes[i]); // ✅ debug log
+  console.log("Generating:", copyTypes[i]);
 
-      const copyHtml = await buildLRHtml(
-        vehicle,
-        signatureDataUrl,
-        logoBase64,
-        copyTypes[i]
-      );
+  // ✅ CLONE OBJECT (IMPORTANT)
+  const vehicleCopy = JSON.parse(JSON.stringify(vehicle));
 
-      htmlContent += copyHtml;
+  const copyHtml = await buildLRHtml(
+    vehicleCopy,
+    signatureDataUrl,
+    logoBase64,
+    copyTypes[i]
+  );
 
-      // ✅ Page break between pages (NOT after last)
-      if (i < copyTypes.length - 1) {
-        htmlContent += '<div style="page-break-after: always;"></div>';
-      }
-    }
+  htmlContent += copyHtml;
+
+  if (i < copyTypes.length - 1) {
+    htmlContent += '<div style="page-break-after: always;"></div>';
+  }
+}
 
     // 🚨 Safety check
     if (!htmlContent || typeof htmlContent !== 'string' || htmlContent.trim() === '') {
