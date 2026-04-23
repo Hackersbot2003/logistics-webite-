@@ -233,7 +233,11 @@ function FMLForm({ sheets, vehicle, onClose, onSaved }) {
   const locations=[...new Set(logisticsItems.map(i=>i.location).filter(Boolean))];
   const consigneesForLoc=logisticsItems.filter(i=>i.location===selLocation);
   const uniqueModels=[...new Set(modelsList.map(m=>m.model))];
-  const modelSpecs=modelsList.find(m=>m.model===selModel)?.modelSpecs||[];
+  const modelSpecs = modelsList
+  .filter(
+    m => m.model?.trim().toLowerCase() === selModel?.trim().toLowerCase()
+  )
+  .flatMap(m => m.modelSpecs || []);
   const modelInfoOpts=modelSpecs.map(s=>s.modelInfo);
   const modelDetailsOpts=modelSpecs.find(s=>s.modelInfo===selModelInfo)?.modelDetails||[];
   const typeSheets=sheets.filter(s=>s.sheetType==="FML"&&s.status==="active");
