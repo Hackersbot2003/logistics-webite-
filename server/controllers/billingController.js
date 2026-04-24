@@ -256,6 +256,10 @@ exports.generateBill = async (req, res) => {
     const { billingSheetName, sheetType, vehicleSheetName, location, consigneeName, models,
             invoiceDate, eAckNumber, eAckDate, miscRate, cgstRate, sgstRate,
             urbania, urbaniaIncentive, vehicleIds } = req.body;
+    console.log(billingSheetName, sheetType, vehicleSheetName, location, consigneeName, models,
+            invoiceDate, eAckNumber, eAckDate, miscRate, cgstRate, sgstRate,
+            urbania, urbaniaIncentive, vehicleIds);
+    
 
     if (!billingSheetName || !sheetType || !vehicleSheetName || !location || !consigneeName)
       return res.status(400).json({ message: 'Missing required fields' });

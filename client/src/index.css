@@ -72,18 +72,29 @@
     @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium font-mono;
   }
 }
-
-/* ── Responsive overrides ── */
 @media (max-width: 768px) {
-  .mobile-menu-btn { display: flex !important; }
-  aside { display: none !important; }
-  table { font-size: 12px !important; }
-  td, th { padding: 9px 8px !important; }
+  .mobile-menu-btn {
+    display: flex !important;
+  }
+
+  .ds-sidebar {
+    display: none !important;
+  }
+
+  table {
+    font-size: 12px !important;
+  }
+
+  td,
+  th {
+    padding: 9px 8px !important;
+  }
 }
 
 @media (max-width: 480px) {
-  .drivers-grid { grid-template-columns: 1fr !important; }
+  .drivers-grid {
+    grid-template-columns: 1fr !important;
+  }
 }
-
 * { box-sizing: border-box; }
 body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }

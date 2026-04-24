@@ -108,12 +108,45 @@ export default function Layout() {
         ☰
       </button>
 
-      {mobileOpen && (
-        <div style={{ position:"fixed", inset:0, zIndex:1999, display:"flex" }}>
-          <div style={{ background:"rgba(0,0,0,0.6)", position:"absolute", inset:0 }} onClick={() => setMobileOpen(false)} />
-          <aside style={{ width:210, background:S.bg, display:"flex", flexDirection:"column", padding:"18px 8px", height:"100%", overflowY:"auto", position:"relative", zIndex:1, borderRight:`1px solid ${S.border}` }}>{sidebar}</aside>
-        </div>
-      )}
+     {mobileOpen && (
+  <div
+    style={{
+      position: "fixed",
+      inset: 0,
+      zIndex: 1999
+    }}
+  >
+    {/* Background overlay */}
+    <div
+      onClick={() => setMobileOpen(false)}
+      style={{
+        position: "absolute",
+        inset: 0,
+        background: "rgba(0,0,0,0.6)"
+      }}
+    />
+
+    {/* Sidebar drawer */}
+    <aside
+      style={{
+        position: "absolute",
+        left: 0,
+        top: 0,
+        width: 210,
+        height: "100%",
+        background: S.bg,
+        padding: "18px 8px",
+        display: "flex",
+        flexDirection: "column",
+        overflowY: "auto",
+        zIndex: 2000,
+        borderRight: `1px solid ${S.border}`
+      }}
+    >
+      {sidebar}
+    </aside>
+  </div>
+)}
 
       <main style={{ flex:1, overflow:"auto", minWidth:0, background:"#F8FAFC" }}>
         <Outlet />

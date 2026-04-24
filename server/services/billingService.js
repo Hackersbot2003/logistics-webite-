@@ -10,6 +10,8 @@ const { getSheetsClient, getDriveClient } = require('../config/google');
 const logger = require('../config/logger');
 const puppeteer = require('puppeteer');
 
+let browserInstance = null;
+
 // ─── 68 columns — identical to reference server ────────────────────────────────
 const CUSTOM_HEADERS = [
   "billNo","billDate",
@@ -788,59 +790,80 @@ function buildBillingHTML({ record, calc, overallKm, sheetType }) {
 </html>`;
 }
 
-// ─── PDF Generation ──────────────────────────────────────────────────────────────
-async function generatePDFBuffer(htmlContent) {
-  console.log('Starting PDF generation...');
-  let browser;
+
+
+async function getBrowser() {
   try {
-    console.log('Launching puppeteer browser...');
-    browser = await puppeteer.launch({ 
-      headless: "new",
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--no-first-run',
-        '--no-zygote',
-        '--single-process'
-      ],
-    });
-    console.log('Browser launched successfully');
-    const page = await browser.newPage();
-    console.log('New page created, setting content...');
-    await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
-    console.log('Content set, generating PDF...');
-    
-    let pdfBuffer = await page.pdf({
-      format: 'A4',
-      printBackground: true,
-      margin: {
-        top: 0,
-        right: 0,
-        bottom: 0,
-        left: 0,
-      },
+    if (!browserInstance) {
+      console.log("Launching shared puppeteer browser...");
+
+      browserInstance = await puppeteer.launch({
+        headless: "new",
+        args: [
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+          "--disable-dev-shm-usage",
+          "--disable-gpu"
+        ]
+      });
+
+      browserInstance.on("disconnected", () => {
+        console.log("Browser disconnected. Resetting instance...");
+        browserInstance = null;
+      });
+    }
+
+    return browserInstance;
+
+  } catch (error) {
+    console.error("Browser launch failed:", error);
+    browserInstance = null;
+    throw error;
+  }
+}
+
+async function generatePDFBuffer(html) {
+  let page;
+
+  try {
+    console.log("Starting PDF generation...");
+
+    const browser = await getBrowser();
+
+    console.log("Browser ready");
+
+    page = await browser.newPage();
+
+    console.log("New page created");
+
+    await page.setContent(html, {
+      waitUntil: "networkidle0"
     });
 
-    console.log('PDF generated successfully, size:', pdfBuffer.length, 'bytes');
-    
-    // Ensure pdfBuffer is a Buffer object before returning
-    if (!Buffer.isBuffer(pdfBuffer)) {
-      pdfBuffer = Buffer.from(pdfBuffer);
-    }
-    
-    return pdfBuffer;
+    console.log("Content loaded");
+
+    const pdfBytes = await page.pdf({
+      format: "A4",
+      printBackground: true,
+      preferCSSPageSize: true
+    });
+
+    console.log("PDF generated successfully");
+
+    return Buffer.from(pdfBytes);
+
   } catch (error) {
-    console.error('PDF generation failed:', error.message);
-    console.error('Error stack:', error.stack);
-    logger.error(`PDF generation failed: ${error.message}`);
+    console.error("PDF generation failed:", error.message);
     throw error;
+
   } finally {
-    if (browser) {
-      console.log('Closing browser...');
-      await browser.close();
-      console.log('Browser closed');
+    if (page) {
+      try {
+        await page.close();
+        console.log("Page closed");
+      } catch (err) {
+        console.log("Page close skipped");
+      }
     }
   }
 }
