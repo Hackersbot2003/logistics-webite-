@@ -74,19 +74,40 @@ const syncToSheets = (op, vehicle) => {
 
 const getVehicles = async (req, res) => {
   try {
-    const { sheetName, search, page=1, limit=10, status } = req.query;
+    const { sheetName, search, page=1, limit=10, status, pdiStatus, placeOfDelivery, model } = req.query;
     const skip = (Number(page)-1)*Number(limit);
-    const query = { deletedAt:null };
+    const query = { deletedAt: null };
     if (sheetName) query.sheetName = sheetName;
-    if (search) query.$text = { $search:search };
+    if (search) query.$text = { $search: search };
+    // Move all filters to backend
     if (status) query.vehicleStatus = new RegExp(status, 'i');
+    if (pdiStatus) query.pdiStatus = new RegExp(pdiStatus, 'i');
+    if (placeOfDelivery) query.placeOfDelivery = new RegExp(placeOfDelivery, 'i');
+    if (model) query.model = new RegExp(model, 'i');
+
     const [vehicles, total] = await Promise.all([
-      Vehicle.find(query).sort({ challanNo:-1 }).skip(skip).limit(Number(limit)),
+      Vehicle.find(query).sort({ createdAt: -1 }).skip(skip).limit(Number(limit)), // ← createdAt
       Vehicle.countDocuments(query),
     ]);
-    res.json({ vehicles, total, page:Number(page), pages:Math.ceil(total/Number(limit)) });
-  } catch(err) { res.status(500).json({ message:"Server error" }); }
+    res.json({ vehicles, total, page: Number(page), pages: Math.ceil(total/Number(limit)) });
+  } catch(err) { res.status(500).json({ message: "Server error" }); }
 };
+
+// const getVehicles = async (req, res) => {
+//   try {
+//     const { sheetName, search, page=1, limit=10, status } = req.query;
+//     const skip = (Number(page)-1)*Number(limit);
+//     const query = { deletedAt:null };
+//     if (sheetName) query.sheetName = sheetName;
+//     if (search) query.$text = { $search:search };
+//     if (status) query.vehicleStatus = new RegExp(status, 'i');
+//     const [vehicles, total] = await Promise.all([
+//       Vehicle.find(query).sort({ challanNo:-1 }).skip(skip).limit(Number(limit)),
+//       Vehicle.countDocuments(query),
+//     ]);
+//     res.json({ vehicles, total, page:Number(page), pages:Math.ceil(total/Number(limit)) });
+//   } catch(err) { res.status(500).json({ message:"Server error" }); }
+// };
 
 const getVehicle = async (req, res) => {
   try {

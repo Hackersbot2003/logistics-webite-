@@ -923,12 +923,12 @@ function AccountsTable({ sheetType }) {
       {/* Filters */}
       <div style={{padding:14,background:C.panel,borderRadius:10,border:`1px solid ${C.border}`,marginBottom:16}}>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:10,alignItems:"flex-end"}}>
-          <div>
+          {/* <div>
             <div style={{fontSize:11,fontWeight:700,color:C.muted,marginBottom:5,textTransform:"uppercase",letterSpacing:"0.05em"}}>Status</div>
             <select value={fStatus} onChange={e=>setFStatus(e.target.value)} style={SEL}>
               <option value="">All</option>{["In-Transit","Accidental","Delivered"].map(s=><option key={s}>{s}</option>)}
             </select>
-          </div>
+          </div> */}
           <div>
             <div style={{fontSize:11,fontWeight:700,color:C.muted,marginBottom:5,textTransform:"uppercase",letterSpacing:"0.05em"}}>PDI Status</div>
             <select value={fPDI} onChange={e=>setFPDI(e.target.value)} style={SEL}>
