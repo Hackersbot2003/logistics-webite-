@@ -6,6 +6,7 @@ const logisticsSchema = new mongoose.Schema({
   consigneeAddress: String,
   consigneeRegion: String,
   overallKM: Number,
+   accountsoverallKM: Number,
   returnFare: Number,
 }, { timestamps: true });
 module.exports = mongoose.model('LogisticsData', logisticsSchema);

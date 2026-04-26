@@ -483,6 +483,7 @@ exports.generateAnnexurePDF = async (req, res) => {
         <td>${i + 1}</td>
         <td>${v.invoiceDate || ''}</td>
         <td>${v.invoiceNo || ''}</td>
+           <td>${v.model || ''}</td>
         <td>${v.chassisNo || ''}</td>
         <td>${v.engineNo || ''}</td>
         <td>${v.tempRegNo || ''}</td>
@@ -502,10 +503,33 @@ exports.generateAnnexurePDF = async (req, res) => {
     .co-name { font-size: 13pt; font-weight: bold; text-align: center; }
     .co-addr { font-size: 8pt; text-align: center; margin-top: 1px; }
     .info-bar { display: flex; justify-content: space-between; border: 1px solid #000; padding: 3px 6px; font-size: 9pt; font-weight: bold; margin: 5px 0 0; }
-    table { width: 100%; border-collapse: collapse; margin-top: 0; }
-    th { border: 1px solid #000; padding: 4px 3px; background: #e8e8e8; font-size: 8pt; font-weight: bold; text-align: center; line-height: 1.2; }
-    td { border: 1px solid #000; padding: 3px 3px; font-size: 8pt; text-align: center; }
-    .total { text-align: right; font-size: 9pt; font-weight: bold; margin-top: 4px; }
+   table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0;
+  table-layout: fixed;   /* keeps proper column sizing */
+}
+
+th {
+  border: 1px solid #000;
+  padding: 4px 3px;
+  background: #e8e8e8;
+  font-size: 8pt;
+  font-weight: bold;
+  text-align: center;
+  line-height: 1.2;
+  white-space: nowrap;   /* prevent header wrapping */
+}
+
+td {
+  border: 1px solid #000;
+  padding: 3px 3px;
+  font-size: 8pt;
+  text-align: center;
+  white-space: nowrap;   /* prevent data breaking into next line */
+  overflow: hidden;
+  text-overflow: ellipsis;
+}.total { text-align: right; font-size: 9pt; font-weight: bold; margin-top: 4px; }
     .print-btn { position: fixed; top: 12px; right: 18px; background: #2563EB; color: #fff; border: none; padding: 8px 22px; font-size: 13px; font-weight: 700; border-radius: 6px; cursor: pointer; z-index: 999; }
     @media print { .print-btn { display: none; } @page { size: A4 landscape; margin: 8mm 10mm; } }
   </style>
@@ -522,14 +546,15 @@ exports.generateAnnexurePDF = async (req, res) => {
     <table>
       <thead>
         <tr>
-          <th style="width:4%">Sr.<br>No.</th>
-          <th style="width:11%">INVOICE DATE</th>
-          <th style="width:15%">INVOICE NO</th>
-          <th style="width:21%">CHASSIS NUMBER</th>
-          <th style="width:16%">ENGINE NUMBER</th>
-          <th style="width:13%">TEMP. REG. NO.</th>
-          <th style="width:10%">COLLECTION<br>DATE</th>
-          <th style="width:10%">DELIVERY<br>DATE</th>
+        <th style="width:4%">Sr.<br>No.</th>
+<th style="width:9%">INVOICE DATE</th>
+<th style="width:11%">INVOICE NO</th>
+<th style="width:6%">MODEL</th>
+<th style="width:18%">CHASSIS NUMBER</th>
+<th style="width:14%">ENGINE NUMBER</th>
+<th style="width:14%">TEMP. REG. NO.</th>
+<th style="width:10%">COLLECTION <br/> DATE</th>
+<th style="width:14%">DELIVERY<br> DATE</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>

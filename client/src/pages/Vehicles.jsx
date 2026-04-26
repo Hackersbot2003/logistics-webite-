@@ -43,7 +43,7 @@ const toISO = (s) => { if(!s) return ""; const p=s.split(/[-/]/); if(p.length!==
 const fromISO = (s) => { if(!s) return ""; const p=s.split("-"); if(p.length!==3) return s; if(p[0].length===4) return `${p[2]}-${p[1]}-${p[0]}`; return s; };
 
 const TYPES = ["FML","FML_EXP","Others"];
-const VEHICLE_STATUSES = ["In-Transit","Accidental","Delivered"];
+const VEHICLE_STATUSES = ["In-Transit","Accidental","Delivered","Other Location Delivered"];
 const PDI_STATUSES = ["Received","Not Received","3rd Party Received"];
 
 // ─── SVG Icons (matching screenshots) ────────────────────────────────────────
@@ -248,7 +248,7 @@ function FMLForm({ sheets, vehicle, onClose, onSaved }) {
   const set=useCallback((k,v)=>setForm(p=>{ const n={...p,[k]:v}; if(k==="vehicleStatus"&&v==="Delivered") n.deliveryDate=TODAY_STR(); return n; }),[]);
 
   const handleDelivery=useCallback((loc)=>{ setSelLocation(loc); set("placeOfDelivery",loc); set("consigneeName",""); set("consigneeRegion",""); set("consigneeAddress",""); set("overallKm",""); },[set]);
-  const handleConsignee=useCallback((name)=>{ set("consigneeName",name); const f=consigneesForLoc.find(c=>c.consigneeName===name); if(f){ set("consigneeRegion",f.consigneeRegion||""); set("consigneeAddress",f.consigneeAddress||""); set("overallKm",String(f.overallKM||"")); } },[consigneesForLoc,set]);
+  const handleConsignee=useCallback((name)=>{ set("consigneeName",name); const f=consigneesForLoc.find(c=>c.consigneeName===name); if(f){ set("consigneeRegion",f.consigneeRegion||""); set("consigneeAddress",f.consigneeAddress||""); set("overallKm",String(f.accountsoverallKM||"")); } },[consigneesForLoc,set]);
   const handleModel=useCallback((m)=>{ setSelModel(m); setSelModelInfo(""); set("model",m); set("modelInfo",""); set("modelDetails",""); },[set]);
   const handleModelInfo=useCallback((mi)=>{ setSelModelInfo(mi); set("modelInfo",mi); set("modelDetails",""); },[set]);
 
@@ -512,7 +512,7 @@ function EXPForm({ sheets, vehicle, onClose, onSaved }) {
   const consigneesForPort=ports.find(p=>p.portName===form.placeOfDelivery)?.consignees||[];
 
   const handleDelivery=useCallback((loc)=>{ set("placeOfDelivery",loc); set("consigneeName",""); set("consigneeRegion",""); set("consigneeAddress",""); set("overallKm",""); },[set]);
-  const handleConsignee=useCallback((name)=>{ set("consigneeName",name); const f=consigneesForPort.find(c=>c.consigneeName===name); if(f){ set("consigneeRegion",f.consigneeRegion||""); set("consigneeAddress",f.consigneeAddress||""); } const portKm=ports.find(p=>p.portName===form.placeOfDelivery)?.overallKm; if(portKm) set("overallKm",String(portKm)); },[consigneesForPort,form.placeOfDelivery,ports,set]);
+  const handleConsignee=useCallback((name)=>{ set("consigneeName",name); const f=consigneesForPort.find(c=>c.consigneeName===name); if(f){ set("consigneeRegion",f.consigneeRegion||""); set("consigneeAddress",f.consigneeAddress||""); } const portKm=ports.find(p=>p.portName===form.placeOfDelivery)?.accountsoverallKM; if(portKm) set("overallKm",String(portKm)); },[consigneesForPort,form.placeOfDelivery,ports,set]);
 
   useEffect(()=>{
     const t=setTimeout(async()=>{

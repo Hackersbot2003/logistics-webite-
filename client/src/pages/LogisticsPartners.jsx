@@ -109,6 +109,7 @@ function FMLForm({ item, onClose, onSaved }) {
     consigneeRegion: item?.consigneeRegion || "",
     consigneeAddress: item?.consigneeAddress || "",
     overallKM: item?.overallKM || "",
+     accountsoverallKM: item?.accountsoverallKM || "",
     returnFare: item?.returnFare || "",
   });
   const [saving, setSaving] = useState(false);
@@ -143,7 +144,11 @@ function FMLForm({ item, onClose, onSaved }) {
   }
 
   if (!form.overallKM) {
-    return toast.error("Overall KM is required");
+    return toast.error("billingOverall KM is required");
+  }
+
+    if (!form.accountsoverallKM) {
+    return toast.error("accountsOverall KM is required");
   }
 
   if (!form.returnFare) {
@@ -179,7 +184,9 @@ function FMLForm({ item, onClose, onSaved }) {
       <Fld label="Consignee Region"><input name="consigneeRegion" value={form.consigneeRegion} onChange={set} style={INP} /></Fld>
       <Fld label="Consignee Address"><input name="consigneeAddress" value={form.consigneeAddress} onChange={set} style={INP} /></Fld>
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-        <Fld label="Overall K M"><input name="overallKM" type="number" value={form.overallKM} onChange={set} style={INP} /></Fld>
+        <Fld label="Billing Overall K M"><input name="overallKM" type="number" value={form.overallKM} onChange={set} style={INP} /></Fld>
+        <Fld label="Accounts Overall K M"><input name="accountsoverallKM" type="number" value={form.accountsoverallKM} onChange={set} style={INP} /></Fld>
+       
         <Fld label="Return Fare"><input name="returnFare" type="number" value={form.returnFare} onChange={set} style={INP} /></Fld>
       </div>
       <div style={{ display:"flex", gap:10, justifyContent:"flex-end", marginTop:8 }}>
@@ -531,7 +538,7 @@ function FMLSection() {
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ background: C.panel }}>
-              {[["logisticPartner", "Logistic Partner"], ["location", "Location"], ["consigneeName", "Consignee Name"], ["consigneeRegion", "Consignee Region"], ["consigneeAddress", "Consignee Address"], ["overallKM", "Overall KM"], ["returnFare", "Return Fare"]].map(([f, h]) => (
+              {[["logisticPartner", "Logistic Partner"], ["location", "Location"], ["consigneeName", "Consignee Name"], ["consigneeRegion", "Consignee Region"], ["consigneeAddress", "Consignee Address"], ["overallKM", "Billing Overall KM"], ["accountsoverallKM", "Accounts Overall KM"], ["returnFare", "Return Fare"]].map(([f, h]) => (
                 <th key={f} onClick={() => itemsTable.handleSort(f)} style={{ padding: "10px 12px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: `1px solid ${C.border}`, cursor: "pointer", whiteSpace: "nowrap" }}>
                   {h} <itemsTable.SortIcon f={f} />
                 </th>
@@ -552,6 +559,7 @@ function FMLSection() {
                 <td style={{ padding: "10px 12px", fontSize: 13, color: C.text }}>{d.consigneeRegion}</td>
                 <td style={{ padding: "10px 12px", fontSize: 13, maxWidth: 180, color: C.text }}>{d.consigneeAddress?.length > 30 ? d.consigneeAddress.slice(0, 30) + "…" : d.consigneeAddress}</td>
                 <td style={{ padding: "10px 12px", fontSize: 13, color: C.text }}>{d.overallKM}</td>
+                 <td style={{ padding: "10px 12px", fontSize: 13, color: C.text }}>{d.accountsoverallKM}</td>
                 <td style={{ padding: "10px 12px", fontSize: 13, color: C.text }}>{d.returnFare}</td>
                 <td style={{ padding: "10px 12px" }}>
                   <div style={{ display: "flex", gap: 6 }}>
@@ -765,12 +773,12 @@ function FMLSection() {
 function PortForm({ item, onClose, onSaved }) {
   const isEdit = Boolean(item);
   const [ports, setPorts] = useState(item ? [{
-    portName: item.portName, overallKm: item.overallKm,
+    portName: item.portName, overallKm: item.overallKm,accountsoverallKM: item.accountsoverallKM,
     consignees: item.consignees?.length ? item.consignees : [{ consigneeName:"", consigneeRegion:"", consigneeAddress:"" }]
-  }] : [{ portName:"", overallKm:"", consignees:[{ consigneeName:"", consigneeRegion:"", consigneeAddress:"" }] }]);
+  }] : [{ portName:"", overallKm:"",accountsoverallKM:"", consignees:[{ consigneeName:"", consigneeRegion:"", consigneeAddress:"" }] }]);
   const [saving, setSaving] = useState(false);
 
-  const addPort = () => setPorts(p=>[...p,{ portName:"", overallKm:"", consignees:[{consigneeName:"",consigneeRegion:"",consigneeAddress:""}] }]);
+  const addPort = () => setPorts(p=>[...p,{ portName:"", overallKm:"", accountsoverallKM:"", consignees:[{consigneeName:"",consigneeRegion:"",consigneeAddress:""}] }]);
   const setPort = (i,k,v) => setPorts(p=>{ const n=[...p]; n[i]={...n[i],[k]:v}; return n; });
   const addConsignee = (i) => setPorts(p=>{ const n=[...p]; n[i]={...n[i],consignees:[...n[i].consignees,{consigneeName:"",consigneeRegion:"",consigneeAddress:""}]}; return n; });
   const removeConsignee = (i,j) => setPorts(p=>{ const n=[...p]; n[i]={...n[i],consignees:n[i].consignees.filter((_,k)=>k!==j)}; return n; });
@@ -780,8 +788,8 @@ function PortForm({ item, onClose, onSaved }) {
     setSaving(true);
     try {
       for (const port of ports) {
-        if (isEdit) { await api.put(`/logistics/ports/${item._id}`, { ...port, overallKm:Number(port.overallKm)||0 }); }
-        else { await api.post("/logistics/ports", { ...port, overallKm:Number(port.overallKm)||0 }); }
+        if (isEdit) { await api.put(`/logistics/ports/${item._id}`, { ...port, overallKm:Number(port.overallKm)||0 , accountsoverallKM:Number(port.accountsoverallKM)||0}); }
+        else { await api.post("/logistics/ports", { ...port, overallKm:Number(port.overallKm)||0 , accountsoverallKM:Number(port.accountsoverallKM)||0}); }
       }
       toast.success(isEdit?"Updated":"Saved"); onSaved(); onClose();
     } catch(err) { toast.error(err.response?.data?.message||"Failed"); }
@@ -795,7 +803,9 @@ function PortForm({ item, onClose, onSaved }) {
           <div style={{ fontWeight:700, color:C.text, marginBottom:10 }}>Port {i+1}</div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:12 }}>
             <Fld label="Port Name"><input value={port.portName} onChange={e=>setPort(i,"portName",e.target.value)} style={INP} /></Fld>
-            <Fld label="Overall KM"><input type="number" value={port.overallKm} onChange={e=>setPort(i,"overallKm",e.target.value)} style={INP} /></Fld>
+            <Fld label="Billing  Overall KM"><input type="number" value={port.overallKm} onChange={e=>setPort(i,"overallKm",e.target.value)} style={INP} /></Fld>
+          <Fld label="Accounts Overall KM"><input type="number" value={port.accountsoverallKM} onChange={e=>setPort(i,"accountsoverallKM",e.target.value)} style={INP} /></Fld>
+        
           </div>
           {port.consignees.map((c,j) => (
             <div key={j} style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:8 }}>
@@ -848,7 +858,7 @@ function EXPFMLSection() {
         <table style={{ width:"100%", borderCollapse:"collapse" }}>
           <thead>
             <tr style={{ background:C.panel }}>
-              {[["portName","Port"],["overallKm","Overall KM"]].map(([f,h])=>(
+              {[["portName","Port"],["overallKm","Billing Overall KM"],["accountsoverallKM","Accounts Overall KM"]].map(([f,h])=>(
                 <th key={f} onClick={()=>portsTable.handleSort(f)} style={{ padding:"10px 12px", textAlign:"left", fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", borderBottom:`1px solid ${C.border}`, cursor:"pointer" }}>
                   {h} <portsTable.SortIcon f={f} />
                 </th>
@@ -867,6 +877,7 @@ function EXPFMLSection() {
                 onMouseLeave={e=>e.currentTarget.style.background="#fff"}>
                 <td style={{ padding:"10px 12px", fontWeight:600, fontSize:13 }}>{p.portName}</td>
                 <td style={{ padding:"10px 12px", fontSize:13 }}>{p.overallKm}</td>
+                 <td style={{ padding:"10px 12px", fontSize:13 }}>{p.accountsoverallKM}</td>
                 <td style={{ padding:"10px 12px", fontSize:12, color:C.muted }}>{p.consignees?.map(c=>c.consigneeName).join(", ") || "—"}</td>
                 <td style={{ padding:"10px 12px" }}>
                   <div style={{ display:"flex", gap:6 }}>

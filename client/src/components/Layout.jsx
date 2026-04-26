@@ -30,7 +30,7 @@ const NAV = [
   { label:"LR Generator",       path:"/lr-generator",       icon:"📄", roles:["superadmin","admin","manager","user"] },
   { label:"ManageVehicleSheets",path:"/ManageVehicleSheets",icon:"📂", roles:["superadmin","admin"] },
   { label:"Lock Sheets",        path:"/lockSheets",         icon:"🔒", roles:["admin","superadmin"] },
-  { label:"Logistics Partners", path:"/logistics-partners", icon:"🤝", roles:["superadmin","admin","manager","user"] },
+  { label:"Logistics Partners", path:"/logistics-partners", icon:"🤝", roles:["superadmin","admin","manager"] },
 ];
 
 export default function Layout() {
