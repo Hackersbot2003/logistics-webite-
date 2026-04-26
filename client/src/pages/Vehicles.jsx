@@ -43,7 +43,7 @@ const toISO = (s) => { if(!s) return ""; const p=s.split(/[-/]/); if(p.length!==
 const fromISO = (s) => { if(!s) return ""; const p=s.split("-"); if(p.length!==3) return s; if(p[0].length===4) return `${p[2]}-${p[1]}-${p[0]}`; return s; };
 
 const TYPES = ["FML","FML_EXP","Others"];
-const VEHICLE_STATUSES = ["In-Transit","Accidental","Delivered","Other Location Delivered"];
+const VEHICLE_STATUSES = ["In-Transit","Accidental","Delivered","Other Location Deliverd"];
 const PDI_STATUSES = ["Received","Not Received","3rd Party Received"];
 
 // ─── SVG Icons (matching screenshots) ────────────────────────────────────────
@@ -200,8 +200,12 @@ function TrackingModal({ v, onClose, onSaved }) {
                   {VEHICLE_STATUSES.map(s=><option key={s}>{s}</option>)}
                 </select>
               </div>
-              <Fld label="Delivery Date"><input value={form.deliveryDate} readOnly={form.vehicleStatus==="Delivered"} onChange={e=>set("deliveryDate",e.target.value)} style={form.vehicleStatus==="Delivered"?INP_RO:INP} /></Fld>
-              <Fld label="Pdi Status"><select value={form.pdiStatus} onChange={e=>set("pdiStatus",e.target.value)} style={SEL}><option value="">Select PDI Status</option>{PDI_STATUSES.map(s=><option key={s}>{s}</option>)}</select></Fld>
+              <Fld label="Delivery Date">
+  <DateInput
+    value={form.deliveryDate}
+    onChange={v => set("deliveryDate", v)}
+  />
+</Fld> <Fld label="Pdi Status"><select value={form.pdiStatus} onChange={e=>set("pdiStatus",e.target.value)} style={SEL}><option value="">Select PDI Status</option>{PDI_STATUSES.map(s=><option key={s}>{s}</option>)}</select></Fld>
               <Fld label="Pdi Date"><DateInput value={form.pdiDate} onChange={v=>set("pdiDate",v)} /></Fld>
               <div style={{ gridColumn:"1/-1" }}><Fld label="Notes"><textarea value={form.notes} onChange={e=>set("notes",e.target.value)} rows={2} style={{ ...INP,resize:"vertical" }} /></Fld></div>
             </G3>
@@ -414,8 +418,12 @@ function FMLForm({ sheets, vehicle, onClose, onSaved }) {
               <Fld label="Time"><input type="time" value={form.time} onChange={e=>set("time",e.target.value)} style={INP} /></Fld>
               <Fld label="Vehicle Location"><input value={form.vehicleLocation} onChange={e=>set("vehicleLocation",e.target.value)} style={INP} placeholder="Enter Vehicle Location" /></Fld>
               <Fld label="Vehicle Status"><select value={form.vehicleStatus} onChange={e=>set("vehicleStatus",e.target.value)} style={SEL}><option value="">Select Vehicle Status</option>{VEHICLE_STATUSES.map(s=><option key={s}>{s}</option>)}</select></Fld>
-              <Fld label="Delivery Date"><input value={form.deliveryDate} readOnly={form.vehicleStatus==="Delivered"} onChange={e=>set("deliveryDate",e.target.value)} style={form.vehicleStatus==="Delivered"?INP_RO:INP} /></Fld>
-              <Fld label="Expected Delivery Date"><DateInput value={form.expecteddeliveryDate} onChange={v=>set("expecteddeliveryDate",v)} /></Fld>
+             <Fld label="Delivery Date">
+  <DateInput
+    value={form.deliveryDate}
+    onChange={v => set("deliveryDate", v)}
+  />
+</Fld> <Fld label="Expected Delivery Date"><DateInput value={form.expecteddeliveryDate} onChange={v=>set("expecteddeliveryDate",v)} /></Fld>
               <Fld label="PDI Status"><select value={form.pdiStatus} onChange={e=>set("pdiStatus",e.target.value)} style={SEL}><option value="">Select PDI Status</option>{PDI_STATUSES.map(s=><option key={s}>{s}</option>)}</select></Fld>
               <Fld label="PDI Date"><DateInput value={form.pdiDate} onChange={v=>set("pdiDate",v)} /></Fld>
               <div style={{ gridColumn:"1/-1" }}><Fld label="notes"><textarea value={form.notes} onChange={e=>set("notes",e.target.value)} rows={2} style={{ ...INP,resize:"vertical" }} /></Fld></div>
@@ -638,8 +646,12 @@ function EXPForm({ sheets, vehicle, onClose, onSaved }) {
               <Fld label="Time"><input type="time" value={form.time} onChange={e=>set("time",e.target.value)} style={INP} /></Fld>
               <Fld label="Vehicle Location"><input value={form.vehicleLocation} onChange={e=>set("vehicleLocation",e.target.value)} style={INP} /></Fld>
               <Fld label="Vehicle Status"><select value={form.vehicleStatus} onChange={e=>set("vehicleStatus",e.target.value)} style={SEL}><option value="">Select Vehicle Status</option>{VEHICLE_STATUSES.map(s=><option key={s}>{s}</option>)}</select></Fld>
-              <Fld label="Delivery Date"><input value={form.deliveryDate} readOnly={form.vehicleStatus==="Delivered"} onChange={e=>set("deliveryDate",e.target.value)} style={form.vehicleStatus==="Delivered"?INP_RO:INP} /></Fld>
-              <Fld label="Expected Delivery Date"><DateInput value={form.expecteddeliveryDate} onChange={v=>set("expecteddeliveryDate",v)} /></Fld>
+             <Fld label="Delivery Date">
+  <DateInput
+    value={form.deliveryDate}
+    onChange={v => set("deliveryDate", v)}
+  />
+</Fld>  <Fld label="Expected Delivery Date"><DateInput value={form.expecteddeliveryDate} onChange={v=>set("expecteddeliveryDate",v)} /></Fld>
               <Fld label="PDI Status"><select value={form.pdiStatus} onChange={e=>set("pdiStatus",e.target.value)} style={SEL}><option value="">Select PDI Status</option>{PDI_STATUSES.map(s=><option key={s}>{s}</option>)}</select></Fld>
               <Fld label="PDI Date"><DateInput value={form.pdiDate} onChange={v=>set("pdiDate",v)} /></Fld>
               <div style={{ gridColumn:"1/-1" }}><Fld label="notes"><textarea value={form.notes} onChange={e=>set("notes",e.target.value)} rows={2} style={{ ...INP,resize:"vertical" }} /></Fld></div>
@@ -861,8 +873,12 @@ function OthersForm({ sheets, vehicle, onClose, onSaved }) {
               <Fld label="Time"><input type="time" value={form.time} onChange={e=>set("time",e.target.value)} style={INP} /></Fld>
               <Fld label="Vehicle Location"><input value={form.vehicleLocation} onChange={e=>set("vehicleLocation",e.target.value)} style={INP} /></Fld>
               <Fld label="Vehicle Status"><select value={form.vehicleStatus} onChange={e=>set("vehicleStatus",e.target.value)} style={SEL}><option value="">Select Vehicle Status</option>{VEHICLE_STATUSES.map(s=><option key={s}>{s}</option>)}</select></Fld>
-              <Fld label="Delivery Date"><input value={form.deliveryDate} readOnly={form.vehicleStatus==="Delivered"} onChange={e=>set("deliveryDate",e.target.value)} style={form.vehicleStatus==="Delivered"?INP_RO:INP} /></Fld>
-              <Fld label="Expected Delivery Date"><DateInput value={form.expecteddeliveryDate} onChange={v=>set("expecteddeliveryDate",v)} /></Fld>
+             <Fld label="Delivery Date">
+  <DateInput
+    value={form.deliveryDate}
+    onChange={v => set("deliveryDate", v)}
+  />
+</Fld> <Fld label="Expected Delivery Date"><DateInput value={form.expecteddeliveryDate} onChange={v=>set("expecteddeliveryDate",v)} /></Fld>
               <Fld label="PDI Status"><select value={form.pdiStatus} onChange={e=>set("pdiStatus",e.target.value)} style={SEL}><option value="">Select PDI Status</option>{PDI_STATUSES.map(s=><option key={s}>{s}</option>)}</select></Fld>
               <Fld label="PDI Date"><DateInput value={form.pdiDate} onChange={v=>set("pdiDate",v)} /></Fld>
               <div style={{ gridColumn:"1/-1" }}><Fld label="Notes"><textarea value={form.notes} onChange={e=>set("notes",e.target.value)} rows={2} style={{ ...INP,resize:"vertical" }} /></Fld></div>

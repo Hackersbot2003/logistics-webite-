@@ -20,27 +20,79 @@ const n = v => parseFloat(v) || 0;
 // ── Bill number: always use last BillingRecord invoiceNo for this sheet ────────
 // Bug fix: counter was resetting when sheet deleted+recreated.
 // Now we look at the last BillingRecord for this billing sheet name.
+// async function getNextBillPair(billingSheet) {
+//   // Find the highest invoiceNo already used in this billing sheet
+//   const lastRecord = await BillingRecord.findOne({ billingSheetName: billingSheet.sheetName })
+//     .sort({ invoiceNo: -1 })
+//     .lean();
+
+//   let nextInv;
+//   if (lastRecord) {
+//     // Continue from last used pair
+//     nextInv = lastRecord.tollBillNo + 1; // e.g. last was 3&4 → next = 5
+//   } else {
+//     nextInv = 1; // brand new sheet
+//   }
+
+//   const tollNo = nextInv + 1;
+
+//   // Keep billCounter in sync for display
+//   billingSheet.billCounter = Math.ceil(nextInv / 2);
+//   await billingSheet.save();
+
+//   return { invoiceNo: nextInv, tollBillNo: tollNo, billNoPair: `${nextInv}&${tollNo}` };
+// }
 async function getNextBillPair(billingSheet) {
-  // Find the highest invoiceNo already used in this billing sheet
-  const lastRecord = await BillingRecord.findOne({ billingSheetName: billingSheet.sheetName })
+  const today = new Date();
+
+  const currentMonth = today.getMonth() + 1; // Jan = 0
+  const currentYear = today.getFullYear();
+
+  let fyStartYear, fyEndYear;
+
+  // Financial year starts from 1st April
+  if (currentMonth >= 4) {
+    fyStartYear = currentYear;
+    fyEndYear = currentYear + 1;
+  } else {
+    fyStartYear = currentYear - 1;
+    fyEndYear = currentYear;
+  }
+
+  // Example: 2026-2027 → 2627
+  const fyPrefix =
+    String(fyStartYear).slice(-2) +
+    String(fyEndYear).slice(-2);
+
+  // Find last record in current sheet
+  const lastRecord = await BillingRecord.findOne({
+    billingSheetName: billingSheet.sheetName
+  })
     .sort({ invoiceNo: -1 })
     .lean();
 
-  let nextInv;
+  let nextInvoiceNo;
+  let nextTollNo;
+
   if (lastRecord) {
-    // Continue from last used pair
-    nextInv = lastRecord.tollBillNo + 1; // e.g. last was 3&4 → next = 5
+    // Continue existing pair logic
+    nextInvoiceNo = Number(lastRecord.tollBillNo) + 1;
+    nextTollNo = nextInvoiceNo + 1;
   } else {
-    nextInv = 1; // brand new sheet
+    // Start new sheet from FY prefix + 01/02
+    nextInvoiceNo = Number(fyPrefix + "01");
+    nextTollNo = Number(fyPrefix + "02");
   }
 
-  const tollNo = nextInv + 1;
-
-  // Keep billCounter in sync for display
-  billingSheet.billCounter = Math.ceil(nextInv / 2);
+  // Keep existing counter logic unchanged
+  billingSheet.billCounter += 1;
   await billingSheet.save();
 
-  return { invoiceNo: nextInv, tollBillNo: tollNo, billNoPair: `${nextInv}&${tollNo}` };
+  return {
+    invoiceNo: nextInvoiceNo,
+    tollBillNo: nextTollNo,
+    billNoPair: `${nextInvoiceNo}&${nextTollNo}`
+  };
 }
 
 // ── Column letter helper ──────────────────────────────────────────────────────
