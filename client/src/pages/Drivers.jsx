@@ -375,15 +375,54 @@ function DriverFormModal({ driver, onClose, onSaved }) {
 
   // KEY: stable onChange — uses functional update, doesn't recreate on every render
   const handleChange = useCallback((e) => {
-    const { name, value } = e.target;
-    setForm(prev => {
-      const next = { ...prev, [name]: name === "fullName" ? value.toUpperCase() : value };
-      if (name === "temporaryAddress" && sameAddr) next.permanentAddress = value;
-      return next;
-    });
-    setErrors(prev => prev[name] ? { ...prev, [name]: "" } : prev);
-  }, [sameAddr]);
+  const { name, value } = e.target;
 
+  const upperCaseFields = [
+    "fullName",
+    "fatherName",
+    "temporaryAddress",
+    "permanentAddress",
+    "emergencyPerson",
+    "senderName",
+    "inchargeName",
+    "licenseNo"
+  ];
+
+  const digitOnlyFields = [
+    "phoneNumber",
+    "emergencyContact",
+    "senderContact",
+    "aadharNo"
+  ];
+
+  let updatedValue = value;
+
+  // Allow only digits
+  if (digitOnlyFields.includes(name)) {
+    updatedValue = value.replace(/\D/g, "");
+  }
+
+  // Convert to uppercase instantly
+  if (upperCaseFields.includes(name)) {
+    updatedValue = value.toUpperCase();
+  }
+
+  setForm(prev => {
+    const next = {
+      ...prev,
+      [name]: updatedValue
+    };
+
+    // same address checkbox logic
+    if (name === "temporaryAddress" && sameAddr) {
+      next.permanentAddress = updatedValue.toUpperCase();
+    }
+
+    return next;
+  });
+
+  setErrors(prev => prev[name] ? { ...prev, [name]: "" } : prev);
+}, [sameAddr]);
   const toggleSameAddr = useCallback(() => {
     setSameAddr(v => {
       if (!v) setForm(p => ({ ...p, permanentAddress: p.temporaryAddress }));
@@ -519,8 +558,8 @@ if (!form.inchargeName.trim()) e.inchargeName = "Required";
                 {/* Personal Info */}
                 <Card><SecHdr icon="👤" title="Personal Information" /><CardBody>
                   <G3>
-                    <FldWithLabel label="Full Name" req error={errors.fullName}>
-                      <input name="fullName" value={form.fullName} onChange={handleChange} style={bord("fullName")} placeholder="AUTO-UPPERCASE" autoComplete="off" />
+                    <FldWithLabel label="Full Name " req error={errors.fullName}>
+                      <input name="fullName" value={form.fullName} onChange={handleChange} style={bord("fullName")} placeholder="FULL-NAME" autoComplete="off" />
                     </FldWithLabel>
                     <FldWithLabel label="Father's Name" req error={errors.fatherName}>
                       <input name="fatherName" value={form.fatherName} onChange={handleChange} style={bord("fatherName")} autoComplete="off" />
